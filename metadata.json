@@ -1,9 +1,5 @@
 {
-  "name": "Steel Online - دستیار هوشمند بازار آهن",
-  "description": "AI-powered assistant for steel trading, pricing, and construction projects in Iran.",
-  "requestFramePermissions": [
-    "camera",
-    "geolocation",
-    "microphone"
-  ]
+  "name": "Steelonline based of HesabrasYar - Intelligent Audit Assistant nu2 focuse on finetiuning",
+  "description": "A professional AI-powered internal and external audit assistant tailored for Iranian accounting standards and Teamyar ERP integration.",
+  "requestFramePermissions": []
 }

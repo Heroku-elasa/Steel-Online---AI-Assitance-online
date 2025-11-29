@@ -3,6 +3,10 @@
 
 
 
+
+
+
+
 export const HESABRASYAR_SYSTEM_INSTRUCTION = `
 شما «حسابرس‌یار» هستید — قوی‌ترین هوش مصنوعی حسابرسی، تراز مالیاتی و تشخیص تقلب ایران ۱۴۰۴
 طراحی شده بر اساس استانداردهای جدید حسابداری ایران (بخشنامه‌های ۹۸، ۹۹ و ۱۴۰۴ سازمان حسابرسی).
@@ -274,4 +278,36 @@ export const STEEL_CHECK_STATUS_DATA = [
     { name: 'در جریان وصول', value: 20, fill: '#3b82f6' },
     { name: 'برگشتی', value: 5, fill: '#ef4444' },
     { name: 'عودت داده شده', value: 10, fill: '#6c757d' },
+];
+
+// --- STEEL ONLINE NEW MOCK DATA ---
+export const STEEL_ALERTS = [
+  { id: 1, type: 'danger', message: 'چک شرکت آلفا فردا سررسید می‌شود - ۵۰۰,۰۰۰,۰۰۰ ریال', date: 'امروز' },
+  { id: 2, type: 'warning', message: '۳ چک در ۵ روز آینده سررسید دارند', date: 'امروز' },
+  { id: 3, type: 'danger', message: 'چک آقای محمدی برگشت خورد - پیگیری فوری', date: 'دیروز' },
+  { id: 4, type: 'warning', message: 'سقف اعتبار شرکت بتا پر شده است', date: 'دیروز' },
+  { id: 5, type: 'success', message: 'چک ۵۰۰ میلیونی وصول شد - بانک ملت', date: '۲ روز پیش' },
+];
+
+export const STEEL_CHECKS_LIST = [
+  { id: '852364', issuer: 'شرکت آلفا عمران', bank: 'ملت', branch: 'جردن', amount: 500000000, issueDate: '1404/02/10', dueDate: '1404/03/16', status: 'pending', daysLeft: 1 },
+  { id: '125487', issuer: 'آقای محمد رضایی', bank: 'ملی', branch: 'ونک', amount: 200000000, issueDate: '1404/02/15', dueDate: '1404/03/18', status: 'pending', daysLeft: 3 },
+  { id: '963258', issuer: 'شرکت بتا صنعت', bank: 'صادرات', branch: 'آزادی', amount: 300000000, issueDate: '1404/01/20', dueDate: '1404/03/18', status: 'transferred', daysLeft: 3 },
+  { id: '741258', issuer: 'شرکت گاما', bank: 'تجارت', branch: 'مرکزی', amount: 800000000, issueDate: '1404/01/05', dueDate: '1404/03/25', status: 'pending', daysLeft: 10 },
+  { id: '369852', issuer: 'آقای احمدی', bank: 'ملت', branch: 'شریعتی', amount: 150000000, issueDate: '1403/12/10', dueDate: '1404/02/10', status: 'cleared', daysLeft: 0 },
+  { id: '147852', issuer: 'شرکت دلتا', bank: 'پاسارگاد', branch: 'جردن', amount: 2300000000, issueDate: '1404/01/15', dueDate: '1404/03/10', status: 'bounced', daysLeft: -6 },
+];
+
+export const STEEL_CUSTOMERS_CREDIT = [
+  { name: 'شرکت آلفا', limit: 5000000000, used: 4800000000, activeChecks: 3, status: 'danger' },
+  { name: 'شرکت بتا', limit: 3000000000, used: 1500000000, activeChecks: 2, status: 'success' },
+  { name: 'آقای احمدی', limit: 1000000000, used: 800000000, activeChecks: 1, status: 'warning' },
+  { name: 'بازرگانی آهن غرب', limit: 2000000000, used: 2100000000, activeChecks: 5, status: 'danger' },
+];
+
+export const STEEL_TRANSACTIONS_RECENT = [
+  { date: '1404/03/15', desc: 'دریافت چک - شرکت گاما', type: 'in', amount: 800000000, balance: 12800000000 },
+  { date: '1404/03/14', desc: 'پرداخت به تامین‌کننده', type: 'out', amount: 1200000000, balance: 12000000000 },
+  { date: '1404/03/12', desc: 'وصول چک آقای کریمی', type: 'in', amount: 450000000, balance: 13200000000 },
+  { date: '1404/03/10', desc: 'خرید میلگرد (پیش‌پرداخت)', type: 'out', amount: 500000000, balance: 12750000000 },
 ];

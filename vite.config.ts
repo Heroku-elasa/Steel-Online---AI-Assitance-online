@@ -4,23 +4,27 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, '.', '');
-  return {
-    plugins: [react()],
-    resolve: {
-      alias: {
-        '@': path.resolve('./'),
+    const env = loadEnv(mode, path.resolve('.'), '');
+    return {
+      server: {
+        port: 3000,
+        host: '0.0.0.0',
+        proxy: {
+          '/api': {
+            target: 'http://127.0.0.1:8788', // Target default Wrangler Pages dev port
+            changeOrigin: true,
+            secure: false,
+          }
+        }
       },
-    },
-    define: {
-      'process.env.API_KEY': JSON.stringify(env.API_KEY),
-    },
-    build: {
-      outDir: 'dist',
-      emptyOutDir: true,
-    },
-    server: {
-      port: 3000,
-    }
-  };
+      plugins: [react()],
+      define: {
+        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY || env.API_KEY),
+      },
+      resolve: {
+        alias: {
+          '@': path.resolve('./'),
+        }
+      }
+    };
 });

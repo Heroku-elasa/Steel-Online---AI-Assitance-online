@@ -20,6 +20,7 @@ const App: React.FC = () => {
   const { t, direction } = useLanguage();
   const [currentView, setCurrentView] = useState<ViewState>('dashboard');
   const [input, setInput] = useState('');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   const [messages, setMessages] = useState<Message[]>(() => {
     try {
@@ -111,15 +112,30 @@ const App: React.FC = () => {
 
   return (
     <div className="flex min-h-screen bg-sage-1 text-brand-black font-sans h-screen overflow-hidden" dir={direction}>
-      <Sidebar currentView={currentView} onViewChange={setCurrentView} />
+      <Sidebar 
+        currentView={currentView} 
+        onViewChange={setCurrentView} 
+        mobileMenuOpen={mobileMenuOpen}
+        setMobileMenuOpen={setMobileMenuOpen}
+      />
 
       <main className="flex-1 flex flex-col h-screen relative w-full">
         
         {/* Mobile Header */}
         <div className="lg:hidden bg-brand-black text-white p-4 flex items-center justify-between border-b border-white/10 shrink-0 z-30">
-            <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-green-high rounded text-brand-black font-bold flex items-center justify-center text-xs">T</div>
-                <h1 className="font-bold text-white">{t('app_title')}</h1>
+            <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => setMobileMenuOpen(true)}
+                  className="text-white hover:bg-white/10 p-1 rounded"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                </button>
+                <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 bg-green-high rounded text-brand-black font-bold flex items-center justify-center text-xs">T</div>
+                    <h1 className="font-bold text-white">{t('app_title')}</h1>
+                </div>
             </div>
              <div className="flex items-center gap-3">
                 <button 

@@ -1,513 +1,270 @@
 
-import React, { useState, useEffect, Suspense, lazy } from 'react';
-import { GoogleGenAI } from "@google/genai";
-import SiteHeader from './components/Header';
-import HomePage from './components/HomePage'; // Keep Home eager for LCP
-import QuotaErrorModal from './components/QuotaErrorModal';
-import LoginModal from './components/LoginModal';
-import SearchModal from './components/SearchModal';
-import FloatingChatbot from './components/FloatingChatbot';
-import SiteFooter from './components/Footer';
-import { Page, ProviderSearchResult, Message, SearchResultItem, useLanguage, TestSubmissionFormInputs, TestRecommendationResult, DailyTrend, GeneratedPost, TestDetailsResult, Article, ARTICLES, User } from './types';
-import { useToast } from './components/Toast';
-import { performSemanticSearch, findLocalProviders, getAIRecommendation, fetchDailyTrends, generateSocialPost, generatePostImage, getTestDetails, adaptPostForWebsite } from './services/geminiService';
+import React, { useState, useRef, useEffect } from 'react';
+import Sidebar from './components/Sidebar';
+import Dashboard from './components/Dashboard';
+import FineTuning from './components/FineTuning';
+import Resources from './components/Resources';
+import WPDashboard from './components/WPDashboard';
+import SteelOnline from './components/SteelOnline';
+import AuditReportRenderer from './components/AuditReportRenderer';
+import AuditChart from './components/AuditChart';
+import { sendMessageToGemini } from './services/geminiService';
+import { Message, MessageRole } from './types';
+import { useLanguage } from './contexts/LanguageContext';
 
-// Lazy load other pages to reduce initial bundle size
-const PartnershipsPage = lazy(() => import('./components/PartnershipsPage'));
-const AIChatPage = lazy(() => import('./components/AIChatPage'));
-const TeamPage = lazy(() => import('./components/TeamPage'));
-const DistributorFinderPage = lazy(() => import('./components/DistributorFinderPage'));
-const RecommendationEnginePage = lazy(() => import('./components/RecommendationEnginePage'));
-const ContentHubPage = lazy(() => import('./components/ContentHubPage'));
-const BlogPage = lazy(() => import('./components/BlogPage'));
-const ArticlePage = lazy(() => import('./components/ArticlePage'));
-const ToolsPage = lazy(() => import('./components/ToolsPage'));
-const IronSnappPage = lazy(() => import('./components/IronSnappPage'));
-const DashboardPage = lazy(() => import('./components/DashboardPage'));
+const STORAGE_KEY = 'hesabrasyar_chat_history';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
-const systemInstruction = `You are a professional, helpful, and knowledgeable AI assistant for "Steel Online 20", a leading online marketplace for steel and iron products in Iran. Your purpose is to assist users (builders, contractors, traders) by providing accurate information about steel prices, product specifications, and purchasing processes.
-
-**Your capabilities:**
-*   Answer questions about steel products: Rebar (Milgard), Beams (Tir-Ahan IPE/IPB), Sheets (Varagh Black/Oil/Galvanized), Profiles (Ghotie), Pipes (Looleh), etc.
-*   Provide technical information about standards (DIN, ASTM, Gost), grades (ST37, ST52), and weight calculations.
-*   Explain our services: Credit purchase (Check/LC), Shipping, and Price Guarantees.
-*   Help users find information on the website.
-
-**Search Usage:**
-*   You have access to Google Search. ALWAYS use it to provide the most up-to-date prices, news, and technical data. Do not rely on stale internal knowledge for pricing.
-
-**App Features & Navigation:**
-You can also guide users to the right tools on our website. When a user's query matches one of the features below, you should recommend they use it and provide a special link.
-*   **Smart Steel Advisor**: Use this for users asking for product recommendations for a specific project. Suggest it with the link format: [Smart Steel Advisor](page:test_recommender)
-*   **IronSnapp Marketplace**: Use this for users wanting to buy steel directly from sellers, compare prices, or find the nearest warehouse. Especially useful for CHECK payments. Suggest it with the link format: [IronSnapp Marketplace](page:iron_snapp)
-*   **Find Suppliers**: Use this for users asking where to buy or find warehouses. Suggest it with the link format: [Find Suppliers](page:sample_dropoff)
-*   **Tools (Weight/Shipping)**: Use this for weight calculation or shipping cost queries. Suggest it with the link format: [Steel Tools](page:tools)
-*   **Credit Purchase**: Use this for payment inquiries. Suggest it with the link format: [Credit Purchase](page:partnerships)
-*   **Sales Team**: Use this when users ask about sales managers. Suggest it with the link format: [Sales Team](page:our_experts)
-*   **Market Insights**: Use this for price trends. Suggest it with the link format: [Market Insights](page:content_hub)
-
-Example response: "For a detailed estimate of the shipping cost to Mashhad, please use our [Shipping Calculator](page:tools)."
-
-**Tone and Style:**
-*   Maintain a professional, industrial, and helpful tone.
-*   Use relevant emojis (like 🏗️, 🔩, 🏭, 📉, 🛠️).
-
-**Crucial Safety Instructions:**
-*   **DO NOT PROVIDE STRUCTURAL ENGINEERING PLANS.** You are an AI assistant providing product information. Always advise users to consult with a certified structural engineer for safety calculations.
-`;
-
-const LoadingSpinner = () => (
-  <div className="min-h-[50vh] flex items-center justify-center">
-    <div className="w-12 h-12 border-4 border-slate-200 border-t-corp-red rounded-full animate-spin"></div>
-  </div>
-);
+type ViewState = 'dashboard' | 'chat' | 'finetuning' | 'resources' | 'wp_dashboard' | 'steel_online';
 
 const App: React.FC = () => {
-  const [currentPage, setPage] = useState<Page>('home');
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isQuotaExhausted, setIsQuotaExhausted] = useState(false);
-  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
-
-  // AI Chat State
-  const [chatHistory, setChatHistory] = useState<Message[]>([{ role: 'model', parts: [{ text: "سلام! من دستیار هوشمند استیل آنلاین ۲۰ هستم. امروز چطور می‌توانم در خرید آهن‌آلات به شما کمک کنم؟" }] }]);
-  const [isStreaming, setIsStreaming] = useState(false);
+  const { t, direction } = useLanguage();
+  const [currentView, setCurrentView] = useState<ViewState>('dashboard');
+  const [input, setInput] = useState('');
   
-  // Distributor Finder State
-  const [providerResults, setProviderResults] = useState<ProviderSearchResult[] | null>(null);
-  const [isFindingProviders, setIsFindingProviders] = useState(false);
-  
-  // Search State
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchResults, setSearchResults] = useState<SearchResultItem[] | null>(null);
-  const [searchError, setSearchError] = useState<string | null>(null);
-  
-  // Recommendation Engine State
-  const [recommendationResult, setRecommendationResult] = useState<TestRecommendationResult | null>(null);
-  const [isGettingRecommendation, setIsGettingRecommendation] = useState(false);
-  const [testDetails, setTestDetails] = useState<TestDetailsResult | null>(null);
-  const [isFetchingTestDetails, setIsFetchingTestDetails] = useState(false);
-  
-  // Content Hub State
-  const [dailyTrends, setDailyTrends] = useState<DailyTrend[] | null>(null);
-  const [isFetchingTrends, setIsFetchingTrends] = useState(false);
-  const [trendsError, setTrendsError] = useState<string | null>(null);
-  const [generatedPost, setGeneratedPost] = useState<GeneratedPost | null>(null);
-  const [isGeneratingPost, setIsGeneratingPost] = useState(false);
-  const [adaptedPost, setAdaptedPost] = useState<{title: string, content: string} | null>(null);
-  const [isAdapting, setIsAdapting] = useState(false);
-
-  // Blog/Article State
-  const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
-
-
-  const { addToast } = useToast();
-  const { language, t } = useLanguage();
-  
-  const articlesForSearch = (ARTICLES || []).map(a => `Article: ${a.title[language]} ('article', id: ${a.id}). Content: ${a.excerpt[language]}. Category: ${a.category[language]}. Tags: ${(a.tags || []).map(t => t[language]).join(', ')}`).join('\n    ');
-  const searchIndex = `
-    Product Categories: 
-    - ${t('products.food_feed.title')}: ${t('products.food_feed.description')} Keywords: rebar, mesh, construction steel.
-    - ${t('products.microbiology.title')}: ${t('products.microbiology.description')} Keywords: IPE beam, IPB beam, honeycomb beam.
-    - ${t('products.environmental.title')}: ${t('products.environmental.description')} Keywords: black sheet, galvanized sheet, oiled sheet.
-
-    Sales Team:
-    - ${t('ourTeam.doctors.0.name')}: ${t('ourTeam.doctors.0.specialty')} - ${t('ourTeam.doctors.0.bio')}
-    - ${t('ourTeam.doctors.1.name')}: ${t('ourTeam.doctors.1.specialty')} - ${t('ourTeam.doctors.1.bio')}
-    - ${t('ourTeam.doctors.2.name')}: ${t('ourTeam.doctors.2.specialty')} - ${t('ourTeam.doctors.2.bio')}
-
-    Website Pages & Tools:
-    - Page: Home ('home'). Content: Main page with daily steel prices and product categories.
-    - Tool: IronSnapp Marketplace ('iron_snapp'). Content: A marketplace to buy steel directly from sellers, find the nearest warehouse, and pay via check or cash.
-    - Tool: Smart Steel Advisor ('test_recommender'). Content: AI tool to recommend steel products for construction projects based on type and location.
-    - Page: Find Suppliers ('sample_dropoff'). Content: Map and search tool to find steel warehouses and iron depots.
-    - Tool: AI Consultant ('ai_consultant'). Content: Chat interface to ask about steel prices and standards.
-    - Page: Market Insights ('content_hub'). Content: Tool to track steel market trends and generate content.
-    - Page: Blog ('blog'). Content: Articles about steel industry news.
-    ${articlesForSearch}
-    - Page: Sales Team ('our_experts'). Content: Meet our sales experts.
-    - Page: Credit Purchase ('partnerships'). Content: B2B services, check/LC payment options.
-    - Page: Tools ('tools'). Content: Weight calculator, shipping cost estimator, credit info.
-  `;
-    
-  const handleApiError = (error: unknown): string => {
-    let message = "An unexpected error occurred.";
-    if (error instanceof Error) {
-        message = error.message;
-    } else if (typeof error === 'string') {
-        message = error;
+  const [messages, setMessages] = useState<Message[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.map((m: any) => ({
+          ...m,
+          timestamp: new Date(m.timestamp)
+        }));
+      }
+    } catch (e) {
+      console.error("Failed to load chat history", e);
     }
-    
-    if (message.includes('429') || message.includes('quota')) {
-        setIsQuotaExhausted(true);
-        message = "API quota exceeded. Please check your billing or try again later.";
+    return [];
+  });
+
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    if (currentView === 'chat') {
+        scrollToBottom();
     }
-    
-    addToast(message, 'error');
-    return message;
-  };
-  
-  const handleLogout = () => {
-    setUser(null);
-    addToast("You have been logged out.", "info");
+  }, [messages, currentView]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+  }, [messages]);
+
+  const handleClearHistory = () => {
+    if (window.confirm('Are you sure you want to clear chat history?')) {
+      setMessages([]);
+      localStorage.removeItem(STORAGE_KEY);
+    }
   };
 
-  const handleLogin = (userData: User) => {
-    setUser(userData);
-    setIsLoginModalOpen(false);
-    addToast(`Welcome, ${userData.name}!`, "success");
-  };
+  const handleSend = async () => {
+    if (!input.trim() || isLoading) return;
 
-  const handleAiSendMessage = async (message: string) => {
-    const userMessage: Message = { role: 'user', parts: [{ text: message }] };
-    
-    const historyForApi = [...chatHistory, userMessage];
-    
-    setChatHistory(prev => [...prev, userMessage, { role: 'model', parts: [{ text: '' }] }]);
-    setIsStreaming(true);
+    if (currentView !== 'chat') setCurrentView('chat');
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: MessageRole.USER,
+      content: input,
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setInput('');
+    setIsLoading(true);
 
     try {
-        const responseStream = await ai.models.generateContentStream({
-            model: 'gemini-2.5-flash',
-            contents: historyForApi,
-            config: {
-                systemInstruction: systemInstruction,
-                tools: [{ googleSearch: {} }],
-            }
-        });
-
-        let fullResponse = '';
-        let groundingMetadata: any = null;
-
-        for await (const chunk of responseStream) {
-            fullResponse += chunk.text;
-            
-            if (chunk.candidates?.[0]?.groundingMetadata) {
-                groundingMetadata = chunk.candidates[0].groundingMetadata;
-            }
-
-            setChatHistory(prev => {
-                const newHistory = [...prev];
-                newHistory[newHistory.length - 1] = { role: 'model', parts: [{ text: fullResponse }] };
-                return newHistory;
-            });
-        }
-
-        // Append grounding sources if available
-        if (groundingMetadata?.groundingChunks) {
-            const uniqueSources = new Set();
-            const sourcesList: string[] = [];
-
-            groundingMetadata.groundingChunks.forEach((chunk: any) => {
-                if (chunk.web?.uri && chunk.web?.title) {
-                    const sourceKey = chunk.web.uri;
-                    if (!uniqueSources.has(sourceKey)) {
-                        uniqueSources.add(sourceKey);
-                        sourcesList.push(`[${chunk.web.title}](${chunk.web.uri})`);
-                    }
-                }
-            });
-
-            if (sourcesList.length > 0) {
-                 const sourcesText = `\n\n**Sources:**\n${sourcesList.map(s => `- ${s}`).join('\n')}`;
-                 fullResponse += sourcesText;
-                 
-                 setChatHistory(prev => {
-                    const newHistory = [...prev];
-                    newHistory[newHistory.length - 1] = { role: 'model', parts: [{ text: fullResponse }] };
-                    return newHistory;
-                });
-            }
-        }
-
+      const responseText = await sendMessageToGemini(input);
+      
+      const aiMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: MessageRole.MODEL,
+        content: responseText,
+        timestamp: new Date(),
+      };
+      
+      setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {
-        handleApiError(error);
-        setChatHistory(prev => prev.slice(0, -1)); 
+      console.error(error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: MessageRole.SYSTEM,
+        content: "متاسفانه ارتباط با سرور برقرار نشد. لطفاً تنظیمات API Key را بررسی کنید.",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
-        setIsStreaming(false);
-    }
-  };
-  
-  const handleProviderSearch = async (
-    searchMethod: 'geo' | 'text',
-    query: string,
-    searchType: 'distributor' | 'veterinarian' = 'distributor'
-  ) => {
-      setIsFindingProviders(true);
-      setProviderResults(null);
-      try {
-          let location: { lat: number; lon: number } | null = null;
-          if (searchMethod === 'geo') {
-              try {
-                  location = await new Promise((resolve) => {
-                      navigator.geolocation.getCurrentPosition(
-                          position => resolve({
-                              lat: position.coords.latitude,
-                              lon: position.coords.longitude
-                          }),
-                          (error: GeolocationPositionError) => {
-                              console.error(`Geolocation error: Code ${error.code} - ${error.message}`);
-                              resolve(null);
-                          },
-                          { timeout: 10000 }
-                      );
-                  });
-              } catch (geoError) {
-                  console.error("Geolocation promise error:", geoError);
-                  addToast("Could not get your location.", "error");
-              }
-          }
-          const results = await findLocalProviders(query, location, language, searchType);
-          setProviderResults(results);
-      } catch (err) {
-          handleApiError(err);
-      } finally {
-          setIsFindingProviders(false);
-      }
-  };
-  
-  const handleGetRecommendation = async (inputs: TestSubmissionFormInputs, image: { base64: string, mimeType: string } | null) => {
-    setIsGettingRecommendation(true);
-    setRecommendationResult(null);
-    setTestDetails(null);
-    try {
-        const imagePart = image 
-            ? { inlineData: { data: image.base64, mimeType: image.mimeType } } 
-            : null;
-        const result = await getAIRecommendation(inputs, imagePart, language);
-        setRecommendationResult(result);
-    } catch(err) {
-        handleApiError(err);
-    } finally {
-        setIsGettingRecommendation(false);
-    }
-  };
-  
-  const handleGetTestDetails = async (testNames: string[]) => {
-    setIsFetchingTestDetails(true);
-    setTestDetails(null);
-    try {
-      const result = await getTestDetails(testNames, language);
-      setTestDetails(result);
-    } catch(err) {
-      handleApiError(err);
-    } finally {
-      setIsFetchingTestDetails(false);
-    }
-  };
-  
-  const handleFindDropoffLocation = async (primaryAssessment: string) => {
-      await handleProviderSearch('geo', primaryAssessment, 'distributor');
-      setPage('sample_dropoff');
-  };
-
-  const handleSearch = async (query: string) => {
-    setIsSearching(true);
-    setSearchResults(null);
-    setSearchError(null);
-
-    try {
-      const results = await performSemanticSearch(query, searchIndex, language);
-      setSearchResults(results);
-    } catch (err) {
-      const msg = handleApiError(err);
-      setSearchError(msg);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-  
-  const handleFetchTrends = async () => {
-    setIsFetchingTrends(true);
-    setTrendsError(null);
-    setDailyTrends(null);
-    try {
-        const trends = await fetchDailyTrends(language);
-        setDailyTrends(trends);
-    } catch (err) {
-        const msg = handleApiError(err);
-        setTrendsError(msg);
-    } finally {
-        setIsFetchingTrends(false);
+      setIsLoading(false);
     }
   };
 
-  const handleGeneratePost = async (topic: string, platform: GeneratedPost['platform']) => {
-    setIsGeneratingPost(true);
-    setGeneratedPost({ platform, text: '...', imageUrl: null }); 
-    setAdaptedPost(null);
-    try {
-        const { postText, imagePrompt } = await generateSocialPost(topic, platform, language);
-        setGeneratedPost({ platform, text: postText, imageUrl: null });
-        
-        addToast("Generating visual...", "info");
-        const imageBase64 = await generatePostImage(imagePrompt);
-        const imageUrl = `data:image/jpeg;base64,${imageBase64}`;
-        setGeneratedPost({ platform, text: postText, imageUrl: imageUrl });
-        addToast("Content generated!", "success");
-
-    } catch (err) {
-        handleApiError(err);
-        setGeneratedPost(null);
-    } finally {
-        setIsGeneratingPost(false);
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
     }
   };
-
-  const handleAdaptPost = async (postText: string, platform: string) => {
-      setIsAdapting(true);
-      setAdaptedPost(null);
-      try {
-          const result = await adaptPostForWebsite(postText, platform, language);
-          setAdaptedPost(result);
-          addToast("Content adapted!", "success");
-      } catch (error) {
-          handleApiError(error);
-      } finally {
-          setIsAdapting(false);
-      }
-  };
-
-  const handleNavigateFromSearch = (page: Page, id?: number) => {
-    if (page === 'article' && id) {
-      const article = ARTICLES.find(a => a.id === id);
-      if (article) {
-        setSelectedArticle(article);
-      }
-    }
-    setPage(page);
-    setIsSearchModalOpen(false);
-  };
-  
-  const handleSelectArticle = (article: Article) => {
-    setSelectedArticle(article);
-    setPage('article');
-  };
-
-  const renderPage = () => {
-    return (
-      <Suspense fallback={<LoadingSpinner />}>
-        {(() => {
-          switch (currentPage) {
-            case 'home':
-              return <HomePage setPage={setPage} articles={ARTICLES} onSelectArticle={handleSelectArticle} />;
-            case 'iron_snapp':
-              return <IronSnappPage />;
-            case 'test_recommender':
-              return <RecommendationEnginePage 
-                  onGetRecommendation={handleGetRecommendation}
-                  isLoading={isGettingRecommendation}
-                  result={recommendationResult}
-                  onClearResult={() => {
-                      setRecommendationResult(null);
-                      setTestDetails(null);
-                  }}
-                  onGetTestDetails={handleGetTestDetails}
-                  isFetchingTestDetails={isFetchingTestDetails}
-                  testDetails={testDetails}
-                  onFindDropoffLocation={handleFindDropoffLocation}
-              />;
-            case 'sample_dropoff':
-              return <DistributorFinderPage 
-                  onSearch={handleProviderSearch}
-                  isLoading={isFindingProviders}
-                  results={providerResults}
-                  isQuotaExhausted={isQuotaExhausted}
-              />;
-            case 'ai_consultant':
-              return <AIChatPage
-                  chatHistory={chatHistory} 
-                  isStreaming={isStreaming} 
-                  onSendMessage={handleAiSendMessage}
-                  setPage={setPage}
-              />;
-            case 'blog':
-              return <BlogPage articles={ARTICLES} onSelectArticle={handleSelectArticle} />;
-            case 'article':
-              return selectedArticle 
-                  ? <ArticlePage article={selectedArticle} setPage={setPage} /> 
-                  : <BlogPage articles={ARTICLES} onSelectArticle={handleSelectArticle} />;
-            case 'content_hub':
-              return <ContentHubPage
-                  onFetchTrends={handleFetchTrends}
-                  isFetchingTrends={isFetchingTrends}
-                  trends={dailyTrends}
-                  trendsError={trendsError}
-                  onGeneratePost={handleGeneratePost}
-                  isGeneratingPost={isGeneratingPost}
-                  generatedPost={generatedPost}
-                  onClearPost={() => {
-                      setGeneratedPost(null);
-                      setAdaptedPost(null);
-                  }}
-                  onAdaptPost={handleAdaptPost}
-                  isAdapting={isAdapting}
-                  adaptedPost={adaptedPost}
-              />;
-            case 'our_experts':
-              return <TeamPage />;
-            case 'partnerships':
-              return <PartnershipsPage setPage={setPage} />;
-            case 'tools':
-              return <ToolsPage />;
-            case 'dashboard':
-              return <DashboardPage setPage={setPage} />;
-            default:
-              return <HomePage setPage={setPage} articles={ARTICLES} onSelectArticle={handleSelectArticle} />;
-          }
-        })()}
-      </Suspense>
-    );
-  };
-
-  const isAuthenticated = !!user;
 
   return (
-      <div className="bg-slate-50 text-slate-800 font-sans">
-        {currentPage !== 'dashboard' && (
-            <SiteHeader
-            currentPage={currentPage}
-            setPage={setPage}
-            isAuthenticated={isAuthenticated}
-            user={user}
-            onLoginClick={() => setIsLoginModalOpen(true)}
-            onLogoutClick={handleLogout}
-            onSearchClick={() => setIsSearchModalOpen(true)}
-            />
+    <div className="flex min-h-screen bg-sage-1 text-brand-black font-sans h-screen overflow-hidden" dir={direction}>
+      <Sidebar currentView={currentView} onViewChange={setCurrentView} />
+
+      <main className="flex-1 flex flex-col h-screen relative w-full">
+        
+        {/* Mobile Header */}
+        <div className="lg:hidden bg-brand-black text-white p-4 flex items-center justify-between border-b border-white/10 shrink-0 z-30">
+            <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-green-high rounded text-brand-black font-bold flex items-center justify-center text-xs">T</div>
+                <h1 className="font-bold text-white">{t('app_title')}</h1>
+            </div>
+             <div className="flex items-center gap-3">
+                <button 
+                    onClick={() => setCurrentView(currentView === 'chat' ? 'dashboard' : 'chat')} 
+                    className="text-white text-xs bg-white/10 px-2 py-1 rounded"
+                >
+                    {currentView === 'chat' ? t('nav_dashboard') : t('nav_chat')}
+                </button>
+            </div>
+        </div>
+
+        {/* Main Content Area - Switched based on View */}
+        <div className="flex-1 relative overflow-hidden">
+            
+            {/* Dashboard View */}
+            {currentView === 'dashboard' && (
+                <div className="absolute inset-0 overflow-y-auto">
+                    <Dashboard />
+                </div>
+            )}
+
+            {/* Fine-Tuning View */}
+            {currentView === 'finetuning' && (
+                <div className="absolute inset-0 overflow-y-auto">
+                    <FineTuning />
+                </div>
+            )}
+
+            {/* Resources View */}
+            {currentView === 'resources' && (
+                <div className="absolute inset-0 overflow-y-auto">
+                    <Resources />
+                </div>
+            )}
+
+             {/* WP Dashboard View */}
+             {currentView === 'wp_dashboard' && (
+                <div className="absolute inset-0 overflow-y-auto">
+                    <WPDashboard />
+                </div>
+            )}
+
+            {/* Steel Online View */}
+            {currentView === 'steel_online' && (
+                <div className="absolute inset-0 overflow-y-auto bg-[#f5f5f7]">
+                    <SteelOnline />
+                </div>
+            )}
+
+            {/* Chat View */}
+            {currentView === 'chat' && (
+                <div className="absolute inset-0 overflow-y-auto p-4 lg:p-10 pb-40 z-20 bg-sage-1">
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-xl font-bold">{t('nav_chat')}</h2>
+                        <div className="flex items-center gap-4">
+                            <button 
+                                onClick={handleClearHistory}
+                                className="text-sm text-red-high hover:text-red-500 flex items-center gap-1"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                {t('chat_clear')}
+                            </button>
+                        </div>
+                    </div>
+
+                    {messages.length === 0 && (
+                        <div className="flex flex-col items-center justify-center h-64 opacity-50">
+                            <div className="w-16 h-16 bg-sage-2 rounded-full flex items-center justify-center mb-4">
+                                <span className="text-3xl">👋</span>
+                            </div>
+                            <p>{t('chat_welcome')}</p>
+                        </div>
+                    )}
+
+                    {messages.map((msg) => (
+                        <div key={msg.id} className={`flex w-full mb-6 ${msg.role === MessageRole.USER ? 'justify-start' : 'justify-end'}`}>
+                        {msg.role === MessageRole.USER ? (
+                            <div className="max-w-[85%] lg:max-w-[60%] bg-brand-green text-white px-6 py-4 rounded-2xl rounded-tr-sm shadow-md">
+                            <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                            </div>
+                        ) : (
+                            <div className="w-full max-w-4xl">
+                                <div className="bg-white p-6 lg:p-10 rounded-2xl border border-sage-2 shadow-soft">
+                                    <div className="flex items-center gap-3 mb-6 border-b border-sage-2 pb-4">
+                                        <div className="w-8 h-8 bg-green-high/30 rounded-lg flex items-center justify-center">
+                                            <svg className="w-5 h-5 text-brand-green" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                                        </div>
+                                        <span className="font-bold text-brand-black text-sm">{t('chat_response')}</span>
+                                    </div>
+                                    <AuditReportRenderer content={msg.content} />
+                                    {(msg.content.includes('نمودار') || msg.content.includes('ریسک')) && (
+                                        <div className="h-72 w-full max-w-lg mx-auto mt-8">
+                                            <AuditChart />
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                        </div>
+                    ))}
+                     {isLoading && (
+                        <div className="flex justify-end w-full">
+                        <div className="bg-white border border-sage-2 p-4 rounded-2xl shadow-sm flex items-center gap-4">
+                            <div className="flex space-x-1 space-x-reverse">
+                                <div className="w-2 h-2 bg-brand-green rounded-full animate-bounce"></div>
+                                <div className="w-2 h-2 bg-brand-green rounded-full animate-bounce delay-75"></div>
+                                <div className="w-2 h-2 bg-brand-green rounded-full animate-bounce delay-150"></div>
+                            </div>
+                            <span className="text-brand-black/60 text-sm font-medium">{t('chat_processing')}</span>
+                        </div>
+                        </div>
+                    )}
+                    <div ref={messagesEndRef} />
+                </div>
+            )}
+        </div>
+
+        {/* Floating Input Area (Visible except in FineTuning/Resources/WP/Steel if desired, usually kept global) */}
+        {currentView !== 'finetuning' && currentView !== 'resources' && currentView !== 'wp_dashboard' && currentView !== 'steel_online' && (
+            <div className="bg-white/90 backdrop-blur-md border-t border-sage-3 p-4 lg:px-12 lg:py-4 absolute bottom-0 w-full z-30 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+            <div className="max-w-4xl mx-auto flex items-end gap-3">
+                <div className="flex-1 bg-sage-1 rounded-xl flex items-center p-1.5 border border-sage-3 focus-within:border-brand-green focus-within:ring-1 focus-within:ring-brand-green/20 transition-all shadow-inner">
+                    <textarea
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder={t('chat_placeholder')}
+                        className="w-full bg-transparent border-none focus:ring-0 text-brand-black placeholder:text-sage-5/60 resize-none max-h-32 min-h-[3rem] py-3 px-4 leading-relaxed"
+                        rows={1}
+                    />
+                </div>
+                <button 
+                    onClick={handleSend}
+                    disabled={!input.trim() || isLoading}
+                    className={`p-3.5 rounded-xl flex items-center justify-center transition-all duration-300 ${input.trim() && !isLoading ? 'bg-brand-green text-white hover:bg-green-high hover:text-brand-black shadow-md transform hover:-translate-y-0.5' : 'bg-sage-2 text-sage-3 cursor-not-allowed'}`}
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 transform ${direction === 'rtl' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                </button>
+            </div>
+            </div>
         )}
-        
-        <main>
-            {renderPage()}
-        </main>
-        
-        {currentPage !== 'dashboard' && <SiteFooter setPage={setPage} />}
-        
-        <QuotaErrorModal isOpen={isQuotaExhausted} onClose={() => setIsQuotaExhausted(false)} />
-        <LoginModal 
-            isOpen={isLoginModalOpen} 
-            onClose={() => setIsLoginModalOpen(false)} 
-            onLogin={handleLogin} 
-        />
-        <SearchModal
-          isOpen={isSearchModalOpen}
-          onClose={() => setIsSearchModalOpen(false)}
-          onSearch={handleSearch}
-          isLoading={isSearching}
-          results={searchResults}
-          error={searchError}
-          onNavigate={handleNavigateFromSearch}
-        />
-        {currentPage !== 'dashboard' && (
-            <FloatingChatbot
-                chatHistory={chatHistory}
-                isStreaming={isStreaming}
-                onSendMessage={handleAiSendMessage}
-                setPage={setPage}
-            />
-        )}
-      </div>
+      </main>
+    </div>
   );
 };
 

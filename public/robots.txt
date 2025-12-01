@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://steel-online-audit.netlify.app/sitemap.xml

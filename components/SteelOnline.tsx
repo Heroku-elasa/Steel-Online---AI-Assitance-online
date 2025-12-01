@@ -2,11 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
-  PieChart, Pie, Cell, LineChart, Line, AreaChart, Area
+  PieChart, Pie, Cell, LineChart, Line, AreaChart, Area, ScatterChart, Scatter, ZAxis
 } from 'recharts';
 import { 
   STEEL_CHECK_FLOW, STEEL_MATURITY_DATA, STEEL_PARTNER_TRUST, STEEL_CHECK_STATUS_DATA,
-  STEEL_ALERTS, STEEL_CHECKS_LIST, STEEL_CUSTOMERS_CREDIT, STEEL_TRANSACTIONS_RECENT
+  STEEL_ALERTS, STEEL_CHECKS_LIST, STEEL_CUSTOMERS_CREDIT, STEEL_TRANSACTIONS_RECENT,
+  STEEL_FRIENDS_LIST, PLANNING_RISK_DATA, PLANNING_STATUS_DATA, PLANNING_RESULTS_DATA,
+  PLANNING_OBSERVATIONS_DATA, PLANNING_PROCESS_DATA, PLANNING_BUBBLE_DATA
 } from '../constants';
 
 // --- COLORS ---
@@ -24,9 +26,12 @@ const COLORS = {
 
 const SteelOnline: React.FC = () => {
   const [viewMode, setViewMode] = useState<'storefront' | 'dashboard'>('dashboard');
-  const [activeTab, setActiveTab] = useState<'home' | 'checks' | 'credit' | 'calendar' | 'reports'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'checks' | 'credit' | 'calendar' | 'friends' | 'reports' | 'audit'>('home');
   const [activeSlide, setActiveSlide] = useState(0);
   const [showCheckModal, setShowCheckModal] = useState(false);
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [selectedCheckForTransfer, setSelectedCheckForTransfer] = useState<any>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [splitFlapPrices, setSplitFlapPrices] = useState([
     { id: 'sp-0', price: '374545', name: 'میلگرد آجدار شاهین بناب 14 A3' },
     { id: 'sp-1', price: '590909', name: 'پروفیل 40*40 ضخامت 2' },
@@ -74,7 +79,7 @@ const SteelOnline: React.FC = () => {
 
   const NewCheckModal = () => (
       <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden animate-fadeIn">
               <div className="bg-[#1a365d] p-4 flex justify-between items-center text-white">
                   <h3 className="font-bold text-lg">📝 ثبت چک دریافتی جدید</h3>
                   <button onClick={() => setShowCheckModal(false)} className="hover:bg-white/10 p-1 rounded">✕</button>
@@ -113,6 +118,12 @@ const SteelOnline: React.FC = () => {
                        <label className="block text-sm font-bold text-gray-700 mb-2">توضیحات / بابت</label>
                        <textarea className="w-full border border-gray-300 rounded p-2 text-sm focus:border-[#1a365d] outline-none" rows={2} placeholder="بابت فاکتور شماره..." />
                   </div>
+                  <div className="md:col-span-2">
+                      <label className="block text-sm font-bold text-gray-700 mb-2">📎 تصویر چک</label>
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center text-gray-500 hover:bg-gray-50 cursor-pointer">
+                          برای آپلود تصویر چک کلیک کنید یا فایل را اینجا رها کنید
+                      </div>
+                  </div>
               </div>
               <div className="bg-gray-50 p-4 flex justify-end gap-3 border-t border-gray-200">
                   <button onClick={() => setShowCheckModal(false)} className="px-4 py-2 rounded text-gray-600 hover:bg-gray-200 text-sm font-bold">انصراف</button>
@@ -121,6 +132,226 @@ const SteelOnline: React.FC = () => {
           </div>
       </div>
   );
+
+  const TransferCheckModal = () => (
+    <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden animate-fadeIn">
+            <div className="bg-[#ed8936] p-4 flex justify-between items-center text-white">
+                <h3 className="font-bold text-lg">🔄 واگذاری چک به شخص دیگر</h3>
+                <button onClick={() => {setShowTransferModal(false); setSelectedCheckForTransfer(null);}} className="hover:bg-white/10 p-1 rounded">✕</button>
+            </div>
+            {selectedCheckForTransfer && (
+                <div className="bg-orange-50 p-4 border-b border-orange-100 text-sm">
+                    <p><strong>چک شماره:</strong> {selectedCheckForTransfer.id}</p>
+                    <p><strong>مبلغ:</strong> {selectedCheckForTransfer.amount.toLocaleString()} ریال</p>
+                    <p><strong>صادرکننده:</strong> {selectedCheckForTransfer.issuer}</p>
+                </div>
+            )}
+            <div className="p-6 space-y-4">
+                <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">نوع واگذاری</label>
+                    <div className="flex gap-4">
+                        <label className="flex items-center gap-2 text-sm"><input type="radio" name="transferType" defaultChecked /> واگذاری به شخص/شرکت</label>
+                        <label className="flex items-center gap-2 text-sm"><input type="radio" name="transferType" /> خواباندن به حساب (وصول)</label>
+                    </div>
+                </div>
+                <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">واگذار شده به *</label>
+                    <select className="w-full border border-gray-300 rounded p-2 text-sm focus:border-[#ed8936] outline-none">
+                        <option value="">انتخاب شخص یا شرکت...</option>
+                        {STEEL_FRIENDS_LIST.map(friend => (
+                            <option key={friend.id} value={friend.id}>{friend.name} ({friend.company})</option>
+                        ))}
+                    </select>
+                </div>
+                <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">تاریخ واگذاری *</label>
+                    <input type="text" className="w-full border border-gray-300 rounded p-2 text-sm focus:border-[#ed8936] outline-none" placeholder="1404/03/15" />
+                </div>
+                <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">بابت / دلیل</label>
+                    <input type="text" className="w-full border border-gray-300 rounded p-2 text-sm focus:border-[#ed8936] outline-none" placeholder="پرداخت بدهی..." />
+                </div>
+            </div>
+            <div className="bg-gray-50 p-4 flex justify-end gap-3 border-t border-gray-200">
+                <button onClick={() => {setShowTransferModal(false); setSelectedCheckForTransfer(null);}} className="px-4 py-2 rounded text-gray-600 hover:bg-gray-200 text-sm font-bold">انصراف</button>
+                <button onClick={() => {setShowTransferModal(false); setSelectedCheckForTransfer(null);}} className="px-6 py-2 rounded bg-[#ed8936] text-white hover:bg-[#dd6b20] text-sm font-bold shadow-lg">ثبت واگذاری</button>
+            </div>
+        </div>
+    </div>
+  );
+
+  const ReportsView = () => {
+    const [reportType, setReportType] = useState('checks');
+
+    return (
+      <div className="space-y-6 animate-fadeIn">
+          {/* Header & Controls */}
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div>
+                  <h3 className="font-bold text-[#1a365d] text-lg mb-1">📊 مرکز گزارش‌گیری پیشرفته</h3>
+                  <p className="text-gray-500 text-sm">دریافت گزارشات تحلیلی چک‌ها، مالی و بدهکاران</p>
+              </div>
+              <div className="flex gap-2">
+                  <button className="px-4 py-2 border border-gray-300 rounded text-gray-600 hover:bg-gray-50 text-sm font-bold flex items-center gap-2">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                      چاپ
+                  </button>
+                  <button className="px-4 py-2 border border-gray-300 rounded text-gray-600 hover:bg-gray-50 text-sm font-bold flex items-center gap-2">
+                      <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                      خروجی Excel
+                  </button>
+                  <button className="px-4 py-2 border border-gray-300 rounded text-gray-600 hover:bg-gray-50 text-sm font-bold flex items-center gap-2">
+                       <svg className="w-4 h-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                      خروجی PDF
+                  </button>
+              </div>
+          </div>
+
+          {/* Filter Bar */}
+          <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 flex flex-wrap gap-4 items-end">
+              <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">نوع گزارش</label>
+                  <select 
+                    value={reportType} 
+                    onChange={(e) => setReportType(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded text-sm min-w-[180px] outline-none focus:border-[#1a365d]"
+                  >
+                      <option value="checks">وضعیت چک‌ها</option>
+                      <option value="financial">صورت سود و زیان (مالی)</option>
+                      <option value="debtors">لیست بدهکاران</option>
+                      <option value="collection">آمار وصولی‌ها</option>
+                  </select>
+              </div>
+              <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">از تاریخ</label>
+                  <input type="text" placeholder="1404/01/01" className="px-3 py-2 border border-gray-300 rounded text-sm w-32 outline-none focus:border-[#1a365d]" />
+              </div>
+              <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">تا تاریخ</label>
+                  <input type="text" placeholder="1404/03/30" className="px-3 py-2 border border-gray-300 rounded text-sm w-32 outline-none focus:border-[#1a365d]" />
+              </div>
+              {reportType === 'checks' && (
+                  <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1">بانک</label>
+                      <select className="px-3 py-2 border border-gray-300 rounded text-sm w-32 outline-none">
+                          <option>همه بانک‌ها</option>
+                          <option>ملت</option>
+                          <option>ملی</option>
+                      </select>
+                  </div>
+              )}
+               <button className="px-6 py-2 bg-[#1a365d] text-white rounded hover:bg-[#132845] text-sm font-bold mr-auto">
+                  اعمال فیلتر
+              </button>
+          </div>
+
+          {/* Report Content */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Chart Section */}
+              <div className="lg:col-span-1 bg-white p-6 rounded-xl border border-gray-200 shadow-sm min-h-[400px]">
+                  <h3 className="font-bold text-gray-700 mb-4 text-center">نمودار تحلیلی</h3>
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                        {reportType === 'checks' ? (
+                            <PieChart>
+                                <Pie 
+                                    data={[
+                                        { name: 'در جریان', value: 34, fill: '#3182ce' },
+                                        { name: 'وصول شده', value: 12, fill: '#48bb78' },
+                                        { name: 'واگذار شده', value: 4, fill: '#ecc94b' },
+                                        { name: 'برگشتی', value: 2, fill: '#f56565' },
+                                    ]}
+                                    cx="50%" cy="50%" 
+                                    innerRadius={60} 
+                                    outerRadius={80} 
+                                    paddingAngle={5}
+                                    dataKey="value"
+                                >
+                                    <Cell fill="#3182ce" />
+                                    <Cell fill="#48bb78" />
+                                    <Cell fill="#ecc94b" />
+                                    <Cell fill="#f56565" />
+                                </Pie>
+                                <Tooltip contentStyle={{fontFamily: 'Vazirmatn'}} />
+                                <Legend layout="vertical" verticalAlign="middle" align="center" wrapperStyle={{fontFamily: 'Vazirmatn', fontSize: '12px'}} />
+                            </PieChart>
+                        ) : (
+                            <BarChart data={[
+                                { name: 'فروردین', income: 450, expense: 320 },
+                                { name: 'اردیبهشت', income: 520, expense: 410 },
+                                { name: 'خرداد', income: 480, expense: 380 },
+                            ]}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                <XAxis dataKey="name" tick={{fontSize: 12}} />
+                                <YAxis tick={{fontSize: 12}} />
+                                <Tooltip />
+                                <Legend />
+                                <Bar dataKey="income" name="درآمد" fill="#48bb78" radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="expense" name="هزینه" fill="#f56565" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                        )}
+                    </ResponsiveContainer>
+                  </div>
+              </div>
+
+              {/* Table Section */}
+              <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                  <div className="p-4 border-b border-gray-100 bg-gray-50 flex justify-between">
+                      <h3 className="font-bold text-gray-700">
+                          {reportType === 'checks' && 'جدول تفصیلی وضعیت چک‌ها'}
+                          {reportType === 'financial' && 'ریز تراکنش‌های مالی'}
+                          {reportType === 'debtors' && 'لیست بدهکاران عمده'}
+                          {reportType === 'collection' && 'گزارش وصول مطالبات'}
+                      </h3>
+                      <span className="text-xs text-gray-500">خرداد ۱۴۰۴</span>
+                  </div>
+                  <div className="overflow-x-auto">
+                      <table className="w-full text-sm text-right">
+                          <thead className="text-gray-500 border-b border-gray-200">
+                              <tr>
+                                  {reportType === 'checks' ? (
+                                      <>
+                                          <th className="px-6 py-3">وضعیت</th>
+                                          <th className="px-6 py-3">تعداد</th>
+                                          <th className="px-6 py-3">مبلغ کل (ریال)</th>
+                                          <th className="px-6 py-3">درصد</th>
+                                      </>
+                                  ) : (
+                                      <>
+                                          <th className="px-6 py-3">شرح حساب</th>
+                                          <th className="px-6 py-3">بدهکار</th>
+                                          <th className="px-6 py-3">بستانکار</th>
+                                          <th className="px-6 py-3">مانده</th>
+                                      </>
+                                  )}
+                              </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                              {reportType === 'checks' ? (
+                                  <>
+                                      <tr><td className="px-6 py-4">در جریان</td><td className="px-6 py-4">۳۴</td><td className="px-6 py-4">۴۵,۰۰۰,۰۰۰,۰۰۰</td><td className="px-6 py-4">۶۵٪</td></tr>
+                                      <tr><td className="px-6 py-4">وصول شده</td><td className="px-6 py-4">۱۲</td><td className="px-6 py-4">۱۵,۰۰۰,۰۰۰,۰۰۰</td><td className="px-6 py-4">۲۳٪</td></tr>
+                                      <tr><td className="px-6 py-4">واگذار شده</td><td className="px-6 py-4">۴</td><td className="px-6 py-4">۳,۰۰۰,۰۰۰,۰۰۰</td><td className="px-6 py-4">۸٪</td></tr>
+                                      <tr><td className="px-6 py-4 text-red-600 font-bold">برگشتی</td><td className="px-6 py-4">۲</td><td className="px-6 py-4 text-red-600">۲,۳۰۰,۰۰۰,۰۰۰</td><td className="px-6 py-4">۴٪</td></tr>
+                                      <tr className="bg-gray-50 font-bold"><td className="px-6 py-4">جمع کل</td><td className="px-6 py-4">۵۲</td><td className="px-6 py-4">۶۵,۳۰۰,۰۰۰,۰۰۰</td><td className="px-6 py-4">۱۰۰٪</td></tr>
+                                  </>
+                              ) : (
+                                  <>
+                                       <tr><td className="px-6 py-4">فروش کالا</td><td className="px-6 py-4">۰</td><td className="px-6 py-4">۴۵۰,۰۰۰,۰۰۰</td><td className="px-6 py-4">(۴۵۰,۰۰۰,۰۰۰)</td></tr>
+                                       <tr><td className="px-6 py-4">خرید مواد اولیه</td><td className="px-6 py-4">۳۲۰,۰۰۰,۰۰۰</td><td className="px-6 py-4">۰</td><td className="px-6 py-4">۳۲۰,۰۰۰,۰۰۰</td></tr>
+                                       <tr><td className="px-6 py-4">هزینه‌های عملیاتی</td><td className="px-6 py-4">۴۵,۰۰۰,۰۰۰</td><td className="px-6 py-4">۰</td><td className="px-6 py-4">۴۵,۰۰۰,۰۰۰</td></tr>
+                                       <tr className="bg-gray-50 font-bold"><td className="px-6 py-4">سود خالص</td><td className="px-6 py-4">-</td><td className="px-6 py-4">-</td><td className="px-6 py-4 text-green-600">۸۵,۰۰۰,۰۰۰</td></tr>
+                                  </>
+                              )}
+                          </tbody>
+                      </table>
+                  </div>
+              </div>
+          </div>
+      </div>
+    );
+  };
 
   const DashboardHome = () => (
       <div className="space-y-6 animate-fadeIn">
@@ -300,7 +531,7 @@ const SteelOnline: React.FC = () => {
                   <button onClick={() => setShowCheckModal(true)} className="px-4 py-2 bg-[#1a365d] text-white rounded-lg text-sm font-bold shadow hover:bg-[#132845] transition-colors flex items-center gap-2">
                       <span>+</span> ثبت چک جدید
                   </button>
-                  <button className="px-4 py-2 bg-[#ed8936] text-white rounded-lg text-sm font-bold shadow hover:bg-[#dd6b20] transition-colors">
+                  <button onClick={() => {setShowTransferModal(true);}} className="px-4 py-2 bg-[#ed8936] text-white rounded-lg text-sm font-bold shadow hover:bg-[#dd6b20] transition-colors">
                       📤 واگذاری چک
                   </button>
               </div>
@@ -371,6 +602,13 @@ const SteelOnline: React.FC = () => {
                                   <td className="px-6 py-4">
                                       <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                           <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded" title="مشاهده"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg></button>
+                                          <button 
+                                              onClick={() => {setSelectedCheckForTransfer(check); setShowTransferModal(true);}} 
+                                              className="p-1.5 text-orange-500 hover:bg-orange-50 rounded" 
+                                              title="واگذاری"
+                                          >
+                                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+                                          </button>
                                           <button className="p-1.5 text-gray-600 hover:bg-gray-100 rounded" title="ویرایش"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
                                           <button className="p-1.5 text-red-600 hover:bg-red-50 rounded" title="حذف"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
                                       </div>
@@ -461,6 +699,271 @@ const SteelOnline: React.FC = () => {
       </div>
   );
 
+  const FriendsView = () => (
+    <div className="space-y-6 animate-fadeIn">
+        <div className="flex justify-between items-center mb-4">
+            <h3 className="font-bold text-lg text-[#1a365d]">دوستان و واسطه‌های معتمد</h3>
+            <button className="px-4 py-2 bg-[#1a365d] text-white rounded-lg text-sm font-bold shadow hover:bg-[#132845] transition-colors">
+                + افزودن شخص جدید
+            </button>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {STEEL_FRIENDS_LIST.map((friend) => (
+                <div key={friend.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col gap-4">
+                    <div className="flex justify-between items-start">
+                        <div className="flex gap-3 items-center">
+                            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-xl">👤</div>
+                            <div>
+                                <h4 className="font-bold text-gray-800">{friend.name}</h4>
+                                <p className="text-xs text-gray-500">{friend.company}</p>
+                            </div>
+                        </div>
+                        <div className="flex text-yellow-400 text-sm">
+                            {'★'.repeat(friend.rating)}{'☆'.repeat(5 - friend.rating)}
+                        </div>
+                    </div>
+                    
+                    <div className="bg-gray-50 rounded-lg p-3 text-sm grid grid-cols-2 gap-y-2">
+                        <span className="text-gray-500">شماره تماس:</span>
+                        <span className="text-gray-800 font-mono text-left">{friend.phone}</span>
+                        <span className="text-gray-500">چک‌های واگذار شده:</span>
+                        <span className="text-gray-800 font-bold">{friend.checksTransferred} فقره</span>
+                        <span className="text-gray-500">حجم ریالی:</span>
+                        <span className="text-gray-800 font-bold">{(friend.transferredAmount / 1000000000).toFixed(1)} میلیارد</span>
+                    </div>
+
+                    <div className="border-t border-gray-100 pt-3">
+                        <p className="text-xs text-gray-500 mb-2 font-bold">چک‌های فعلی نزد ایشان:</p>
+                        {friend.currentChecks.length > 0 ? (
+                            <ul className="space-y-1">
+                                {friend.currentChecks.map((chk, i) => (
+                                    <li key={i} className="text-xs flex justify-between bg-blue-50 p-1.5 rounded text-blue-800">
+                                        <span>مبلغ: {chk.amount.toLocaleString()}</span>
+                                        <span>سررسید: {chk.due}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p className="text-xs text-gray-400 italic">هیچ چکی نزد ایشان نیست.</p>
+                        )}
+                    </div>
+                    
+                    <div className="flex gap-2 mt-auto pt-2">
+                        <button className="flex-1 py-2 text-sm text-blue-600 bg-blue-50 rounded hover:bg-blue-100 font-bold">مشاهده جزئیات</button>
+                        <button className="flex-1 py-2 text-sm text-green-600 bg-green-50 rounded hover:bg-green-100 font-bold">تماس</button>
+                    </div>
+                </div>
+            ))}
+        </div>
+    </div>
+  );
+
+  const CalendarView = () => (
+      <div className="space-y-6 animate-fadeIn">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 min-h-[500px]">
+              <div className="flex justify-between items-center mb-6">
+                  <h3 className="font-bold text-[#1a365d]">تقویم سررسید چک‌ها - خرداد ۱۴۰۴</h3>
+                  <div className="flex gap-2">
+                      <button className="px-3 py-1 bg-gray-100 rounded hover:bg-gray-200 text-sm">ماه قبل</button>
+                      <button className="px-3 py-1 bg-[#1a365d] text-white rounded text-sm">امروز</button>
+                      <button className="px-3 py-1 bg-gray-100 rounded hover:bg-gray-200 text-sm">ماه بعد</button>
+                  </div>
+              </div>
+              
+              {/* Mock Calendar Grid */}
+              <div className="grid grid-cols-7 gap-px bg-gray-200 border border-gray-200 rounded-lg overflow-hidden">
+                  {['شنبه','یکشنبه','دوشنبه','سه‌شنبه','چهارشنبه','پنجشنبه','جمعه'].map(d => (
+                      <div key={d} className="bg-gray-50 p-2 text-center text-xs font-bold text-gray-500">{d}</div>
+                  ))}
+                  {/* Empty slots */}
+                  <div className="bg-white h-24 p-2"></div>
+                  <div className="bg-white h-24 p-2"></div>
+                  
+                  {/* Days */}
+                  {Array.from({length: 30}, (_, i) => {
+                      const day = i + 1;
+                      const events = [
+                          day === 16 ? { type: 'danger', amount: '500M' } : null,
+                          day === 18 ? { type: 'warning', amount: '200M' } : null,
+                          day === 18 ? { type: 'info', amount: '300M' } : null,
+                          day === 25 ? { type: 'success', amount: '800M' } : null,
+                      ].filter(Boolean);
+                      
+                      return (
+                        <div key={day} className={`bg-white h-24 p-2 border-t border-gray-100 relative hover:bg-blue-50 transition-colors cursor-pointer ${day === 15 ? 'bg-blue-50/30' : ''}`}>
+                            <span className={`text-sm font-bold ${day === 15 ? 'text-blue-600 bg-blue-100 w-6 h-6 flex items-center justify-center rounded-full' : 'text-gray-700'}`}>{day}</span>
+                            <div className="mt-1 space-y-1">
+                                {events.map((ev: any, idx) => (
+                                    <div key={idx} className={`text-[10px] px-1 py-0.5 rounded text-white truncate ${ev.type === 'danger' ? 'bg-red-500' : ev.type === 'warning' ? 'bg-yellow-500' : ev.type === 'success' ? 'bg-green-500' : 'bg-blue-500'}`}>
+                                        {ev.amount}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                      )
+                  })}
+              </div>
+              <div className="flex gap-4 mt-4 text-xs text-gray-500 justify-center">
+                  <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-red-500"></div>سررسید امروز</span>
+                  <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-yellow-500"></div>۱-۳ روز مانده</span>
+                  <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-blue-500"></div>بیش از ۳ روز</span>
+                  <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-green-500"></div>وصول شده</span>
+              </div>
+          </div>
+      </div>
+  );
+  
+  const AuditPlanningView = () => (
+      <div className="space-y-6 animate-fadeIn">
+          {/* Header */}
+          <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+             <h3 className="font-bold text-[#1a365d] text-lg">داشبورد برنامه‌ریزی حسابرسی داخلی</h3>
+             <div className="flex gap-2">
+                 <select className="text-sm border rounded px-2 py-1 bg-gray-50"><option>همه ریسک‌ها</option></select>
+                 <select className="text-sm border rounded px-2 py-1 bg-gray-50"><option>تمام واحدها</option></select>
+             </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+               {/* Charts from Planning Dashboard logic */}
+               <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm h-[250px] flex flex-col">
+                   <h4 className="text-xs font-bold text-gray-500 mb-2">رتبه‌بندی ریسک</h4>
+                   <ResponsiveContainer width="100%" height="100%">
+                       <PieChart>
+                           <Pie data={PLANNING_RISK_DATA} dataKey="value" innerRadius={40} outerRadius={60}>
+                               {PLANNING_RISK_DATA.map((entry, index) => <Cell key={index} fill={entry.fill} />)}
+                           </Pie>
+                           <Tooltip />
+                           <Legend wrapperStyle={{fontSize: '10px'}} />
+                       </PieChart>
+                   </ResponsiveContainer>
+               </div>
+               <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm h-[250px] flex flex-col">
+                   <h4 className="text-xs font-bold text-gray-500 mb-2">وضعیت حسابرسی</h4>
+                   <ResponsiveContainer width="100%" height="100%">
+                       <PieChart>
+                           <Pie data={PLANNING_STATUS_DATA} dataKey="value" innerRadius={40} outerRadius={60}>
+                               {PLANNING_STATUS_DATA.map((entry, index) => <Cell key={index} fill={entry.fill} />)}
+                           </Pie>
+                           <Tooltip />
+                           <Legend wrapperStyle={{fontSize: '10px'}} />
+                       </PieChart>
+                   </ResponsiveContainer>
+               </div>
+                <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm h-[250px] flex flex-col">
+                   <h4 className="text-xs font-bold text-gray-500 mb-2">نتایج تکمیل‌شده</h4>
+                   <ResponsiveContainer width="100%" height="100%">
+                       <PieChart>
+                           <Pie data={PLANNING_RESULTS_DATA} dataKey="value" innerRadius={40} outerRadius={60}>
+                               {PLANNING_RESULTS_DATA.map((entry, index) => <Cell key={index} fill={entry.fill} />)}
+                           </Pie>
+                           <Tooltip />
+                           <Legend wrapperStyle={{fontSize: '10px'}} />
+                       </PieChart>
+                   </ResponsiveContainer>
+               </div>
+               <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm h-[250px] flex flex-col">
+                   <h4 className="text-xs font-bold text-gray-500 mb-2">مشاهدات vs اصلاح‌شده</h4>
+                   <ResponsiveContainer width="100%" height="100%">
+                       <BarChart data={PLANNING_OBSERVATIONS_DATA} layout="vertical">
+                           <XAxis type="number" hide />
+                           <YAxis dataKey="name" type="category" width={80} tick={{fontSize: 9}} />
+                           <Tooltip />
+                           <Bar dataKey="all" fill="#1f4e5f" radius={[0, 4, 4, 0]} />
+                           <Bar dataKey="remediated" fill="#ff9800" radius={[0, 4, 4, 0]} />
+                       </BarChart>
+                   </ResponsiveContainer>
+               </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm h-[300px]">
+                  <h4 className="text-xs font-bold text-gray-500 mb-2">مشاهدات بر اساس فرایند تجاری</h4>
+                  <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={PLANNING_PROCESS_DATA} margin={{top: 10, bottom: 20}}>
+                           <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                           <XAxis dataKey="name" tick={{fontSize: 10}} angle={-45} textAnchor="end" interval={0} />
+                           <YAxis />
+                           <Tooltip />
+                           <Bar dataKey="value" fill="#2c5282">
+                               {PLANNING_PROCESS_DATA.map((entry, index) => <Cell key={index} fill={entry.fill} />)}
+                           </Bar>
+                      </BarChart>
+                  </ResponsiveContainer>
+              </div>
+              <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm h-[300px]">
+                  <h4 className="text-xs font-bold text-gray-500 mb-2">تحلیل آسیب‌پذیری و اثر</h4>
+                  <ResponsiveContainer width="100%" height="100%">
+                      <ScatterChart>
+                          <CartesianGrid />
+                          <XAxis type="number" dataKey="x" name="Impact" />
+                          <YAxis type="number" dataKey="y" name="Vulnerability" />
+                          <ZAxis type="number" dataKey="z" range={[60, 400]} />
+                          <Tooltip cursor={{ strokeDasharray: '3 3' }} />
+                          <Scatter name="Units" data={PLANNING_BUBBLE_DATA} fill="#8884d8">
+                              {PLANNING_BUBBLE_DATA.map((entry, index) => <Cell key={index} fill={entry.fill} />)}
+                          </Scatter>
+                      </ScatterChart>
+                  </ResponsiveContainer>
+              </div>
+          </div>
+      </div>
+  );
+
+  const NavigationItems = () => (
+    <>
+         <button 
+             onClick={() => { setActiveTab('home'); setMobileMenuOpen(false); }}
+             className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-bold rounded-xl transition-colors ${activeTab === 'home' ? 'bg-[#ebf8ff] text-[#2c5282]' : 'text-gray-600 hover:bg-gray-50'}`}
+         >
+             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+             داشبورد اصلی
+         </button>
+         <button 
+             onClick={() => { setActiveTab('checks'); setMobileMenuOpen(false); }}
+             className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-bold rounded-xl transition-colors ${activeTab === 'checks' ? 'bg-[#fffaf0] text-[#c05621]' : 'text-gray-600 hover:bg-gray-50'}`}
+         >
+             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+             مدیریت چک‌ها
+         </button>
+         <button 
+             onClick={() => { setActiveTab('credit'); setMobileMenuOpen(false); }}
+             className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-bold rounded-xl transition-colors ${activeTab === 'credit' ? 'bg-[#f0fff4] text-[#276749]' : 'text-gray-600 hover:bg-gray-50'}`}
+         >
+             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+             مشتریان و اعتبار
+         </button>
+         <button 
+             onClick={() => { setActiveTab('calendar'); setMobileMenuOpen(false); }}
+             className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-bold rounded-xl transition-colors ${activeTab === 'calendar' ? 'bg-[#f7fafc] text-[#2d3748]' : 'text-gray-600 hover:bg-gray-50'}`}
+         >
+             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+             تقویم سررسید
+         </button>
+          <button 
+             onClick={() => { setActiveTab('friends'); setMobileMenuOpen(false); }}
+             className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-bold rounded-xl transition-colors ${activeTab === 'friends' ? 'bg-[#fff5f5] text-[#c53030]' : 'text-gray-600 hover:bg-gray-50'}`}
+         >
+             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+             دوستان و واسطه‌ها
+         </button>
+         <button 
+             onClick={() => { setActiveTab('reports'); setMobileMenuOpen(false); }}
+             className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-bold rounded-xl transition-colors ${activeTab === 'reports' ? 'bg-[#ebf4ff] text-[#4c51bf]' : 'text-gray-600 hover:bg-gray-50'}`}
+         >
+             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+             گزارشات مالی
+         </button>
+          <button 
+             onClick={() => { setActiveTab('audit'); setMobileMenuOpen(false); }}
+             className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-bold rounded-xl transition-colors ${activeTab === 'audit' ? 'bg-[#f0f4f8] text-[#1a202c]' : 'text-gray-600 hover:bg-gray-50'}`}
+         >
+             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+             برنامه‌ریزی حسابرسی
+         </button>
+    </>
+  );
+
   return (
     <div className="w-full bg-[#f5f5f7] min-h-screen font-sans text-[#2d3748] dir-rtl">
       {/* CUSTOM STYLES */}
@@ -497,27 +1000,40 @@ const SteelOnline: React.FC = () => {
         .clock .hour { height: 60px; width: 4px; margin-left: -2px; }
         .clock .min { height: 90px; width: 3px; margin-left: -1.5px; }
         .clock .sec { height: 100px; width: 1px; background: red; margin-left: -0.5px; }
+        .animate-fadeIn { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        .animate-slideRight { animation: slideRight 0.3s ease-out; }
       `}</style>
 
       {/* --- HEADER --- */}
       <div className="w-full bg-white h-[60px] shadow-sm fixed top-0 z-50 flex items-center justify-between px-6 border-b border-gray-200">
          <div className="flex items-center gap-4">
+             {viewMode === 'dashboard' && (
+                 <button 
+                    className="lg:hidden p-1 rounded-md hover:bg-gray-100 text-[#1a365d]"
+                    onClick={() => setMobileMenuOpen(true)}
+                 >
+                     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+                 </button>
+             )}
              <div className="w-8 h-8 bg-[#1a365d] rounded flex items-center justify-center text-white font-bold">S</div>
-             <h1 className="font-bold text-lg text-[#1a365d]">استیل آنلاین ۲۰ <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded ml-2">سیستم مدیریت مالی</span></h1>
+             <h1 className="font-bold text-lg text-[#1a365d] hidden md:block">استیل آنلاین ۲۰ <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded ml-2">سیستم مدیریت مالی</span></h1>
+             <h1 className="font-bold text-lg text-[#1a365d] md:hidden">استیل آنلاین ۲۰</h1>
          </div>
          
          <div className="flex bg-[#f7fafc] p-1 rounded-lg border border-gray-200">
              <button 
                 onClick={() => setViewMode('dashboard')}
-                className={`px-4 py-1.5 text-sm font-bold rounded-md transition-all ${viewMode === 'dashboard' ? 'bg-[#1a365d] text-white shadow' : 'text-gray-500 hover:text-gray-900'}`}
+                className={`px-3 md:px-4 py-1.5 text-xs md:text-sm font-bold rounded-md transition-all ${viewMode === 'dashboard' ? 'bg-[#1a365d] text-white shadow' : 'text-gray-500 hover:text-gray-900'}`}
              >
-                 داشبورد مدیریت
+                 داشبورد
              </button>
              <button 
                 onClick={() => setViewMode('storefront')}
-                className={`px-4 py-1.5 text-sm font-bold rounded-md transition-all ${viewMode === 'storefront' ? 'bg-[#D41F5B] text-white shadow' : 'text-gray-500 hover:text-gray-900'}`}
+                className={`px-3 md:px-4 py-1.5 text-xs md:text-sm font-bold rounded-md transition-all ${viewMode === 'storefront' ? 'bg-[#D41F5B] text-white shadow' : 'text-gray-500 hover:text-gray-900'}`}
              >
-                 فروشگاه آنلاین
+                 فروشگاه
              </button>
          </div>
 
@@ -540,47 +1056,13 @@ const SteelOnline: React.FC = () => {
 
       <div className="pt-[60px] min-h-screen flex">
          
-         {/* --- INTERNAL SIDEBAR (Only for Dashboard Mode) --- */}
+         {/* --- INTERNAL SIDEBAR (Desktop) --- */}
          {viewMode === 'dashboard' && (
              <div className="w-[260px] bg-white border-l border-gray-200 hidden lg:flex flex-col fixed h-full z-40">
                  <div className="p-6">
                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">منوی اصلی</p>
                      <nav className="space-y-1">
-                         <button 
-                             onClick={() => setActiveTab('home')}
-                             className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-bold rounded-xl transition-colors ${activeTab === 'home' ? 'bg-[#ebf8ff] text-[#2c5282]' : 'text-gray-600 hover:bg-gray-50'}`}
-                         >
-                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
-                             داشبورد اصلی
-                         </button>
-                         <button 
-                             onClick={() => setActiveTab('checks')}
-                             className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-bold rounded-xl transition-colors ${activeTab === 'checks' ? 'bg-[#fffaf0] text-[#c05621]' : 'text-gray-600 hover:bg-gray-50'}`}
-                         >
-                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                             مدیریت چک‌ها
-                         </button>
-                         <button 
-                             onClick={() => setActiveTab('credit')}
-                             className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-bold rounded-xl transition-colors ${activeTab === 'credit' ? 'bg-[#f0fff4] text-[#276749]' : 'text-gray-600 hover:bg-gray-50'}`}
-                         >
-                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-                             مشتریان و اعتبار
-                         </button>
-                         <button 
-                             onClick={() => setActiveTab('calendar')}
-                             className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-bold rounded-xl transition-colors ${activeTab === 'calendar' ? 'bg-[#f7fafc] text-[#2d3748]' : 'text-gray-600 hover:bg-gray-50'}`}
-                         >
-                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                             تقویم سررسید
-                         </button>
-                         <button 
-                             onClick={() => setActiveTab('reports')}
-                             className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-bold rounded-xl transition-colors ${activeTab === 'reports' ? 'bg-[#f7fafc] text-[#2d3748]' : 'text-gray-600 hover:bg-gray-50'}`}
-                         >
-                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                             گزارشات مالی
-                         </button>
+                         <NavigationItems />
                      </nav>
                  </div>
                  <div className="mt-auto p-6 border-t border-gray-200">
@@ -592,31 +1074,61 @@ const SteelOnline: React.FC = () => {
              </div>
          )}
 
+         {/* --- INTERNAL SIDEBAR (Mobile Drawer) --- */}
+         {viewMode === 'dashboard' && mobileMenuOpen && (
+             <div className="fixed inset-0 z-[60] lg:hidden">
+                 {/* Backdrop */}
+                 <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)}></div>
+                 
+                 {/* Drawer */}
+                 <div className="absolute right-0 top-0 bottom-0 w-[280px] bg-white shadow-2xl flex flex-col animate-slideRight">
+                     <div className="p-4 flex justify-between items-center border-b border-gray-100">
+                         <h2 className="font-bold text-[#1a365d]">منوی داشبورد</h2>
+                         <button onClick={() => setMobileMenuOpen(false)} className="p-2 text-gray-500 hover:bg-gray-100 rounded-full">✕</button>
+                     </div>
+                     <div className="p-4 overflow-y-auto flex-1">
+                         <nav className="space-y-1">
+                             <NavigationItems />
+                         </nav>
+                     </div>
+                     <div className="p-4 border-t border-gray-100 bg-gray-50">
+                        <button className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-600 hover:bg-red-50 hover:text-red-600 rounded-xl transition-colors">
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                            خروج از سیستم
+                        </button>
+                     </div>
+                 </div>
+             </div>
+         )}
+
          {/* --- MAIN CONTENT AREA --- */}
-         <div className={`flex-1 p-6 transition-all duration-300 ${viewMode === 'dashboard' ? 'lg:mr-[260px]' : ''}`}>
+         <div className={`flex-1 p-6 transition-all duration-300 ${viewMode === 'dashboard' ? 'lg:mr-[260px]' : ''} w-full`}>
              
              {viewMode === 'dashboard' ? (
                  <>
                     {/* Breadcrumbs */}
-                    <div className="flex items-center gap-2 text-sm text-gray-400 mb-6">
+                    <div className="flex items-center gap-2 text-sm text-gray-400 mb-6 overflow-x-auto whitespace-nowrap pb-2 md:pb-0">
                         <span>استیل آنلاین ۲۰</span>
                         <span>/</span>
-                        <span className="font-bold text-[#1a365d]">{activeTab === 'home' ? 'داشبورد اصلی' : activeTab === 'checks' ? 'مدیریت چک‌ها' : activeTab === 'credit' ? 'اعتبار مشتریان' : '...'}</span>
+                        <span className="font-bold text-[#1a365d]">
+                            {activeTab === 'home' && 'داشبورد اصلی'}
+                            {activeTab === 'checks' && 'مدیریت چک‌ها'}
+                            {activeTab === 'credit' && 'اعتبار مشتریان'}
+                            {activeTab === 'friends' && 'دوستان و واسطه‌ها'}
+                            {activeTab === 'calendar' && 'تقویم سررسید'}
+                            {activeTab === 'reports' && 'گزارشات مالی'}
+                            {activeTab === 'audit' && 'برنامه‌ریزی حسابرسی'}
+                        </span>
                     </div>
 
                     {/* Render Content Based on Tab */}
                     {activeTab === 'home' && <DashboardHome />}
                     {activeTab === 'checks' && <ChecksView />}
                     {activeTab === 'credit' && <CreditView />}
-                    {(activeTab === 'calendar' || activeTab === 'reports') && (
-                        <div className="flex flex-col items-center justify-center h-[400px] bg-white rounded-xl border border-gray-200">
-                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                                <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
-                            </div>
-                            <h3 className="text-lg font-bold text-gray-700">این بخش در حال توسعه است</h3>
-                            <p className="text-gray-500 mt-2">به زودی امکانات کامل تقویم و گزارش‌ساز پیشرفته اضافه خواهد شد.</p>
-                        </div>
-                    )}
+                    {activeTab === 'friends' && <FriendsView />}
+                    {activeTab === 'calendar' && <CalendarView />}
+                    {activeTab === 'audit' && <AuditPlanningView />}
+                    {activeTab === 'reports' && <ReportsView />}
                  </>
              ) : (
                  // --- STOREFRONT VIEW (Original) ---
@@ -689,6 +1201,7 @@ const SteelOnline: React.FC = () => {
 
       {/* Modals */}
       {showCheckModal && <NewCheckModal />}
+      {showTransferModal && <TransferCheckModal />}
       
     </div>
   );

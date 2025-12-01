@@ -1,4 +1,6 @@
 
+
+
 import React, { useState, useEffect } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -8,7 +10,8 @@ import {
   STEEL_CHECK_FLOW, STEEL_MATURITY_DATA, STEEL_PARTNER_TRUST, STEEL_CHECK_STATUS_DATA,
   STEEL_ALERTS, STEEL_CHECKS_LIST, STEEL_CUSTOMERS_CREDIT, STEEL_TRANSACTIONS_RECENT,
   STEEL_FRIENDS_LIST, PLANNING_RISK_DATA, PLANNING_STATUS_DATA, PLANNING_RESULTS_DATA,
-  PLANNING_OBSERVATIONS_DATA, PLANNING_PROCESS_DATA, PLANNING_BUBBLE_DATA
+  PLANNING_OBSERVATIONS_DATA, PLANNING_PROCESS_DATA, PLANNING_BUBBLE_DATA, STEEL_MARKET_PRICES,
+  STEEL_AI_PREDICTION, MARKET_SENTIMENT_DRIVERS, STEEL_PRODUCTS
 } from '../constants';
 
 // --- COLORS ---
@@ -26,7 +29,7 @@ const COLORS = {
 
 const SteelOnline: React.FC = () => {
   const [viewMode, setViewMode] = useState<'storefront' | 'dashboard'>('dashboard');
-  const [activeTab, setActiveTab] = useState<'home' | 'checks' | 'credit' | 'calendar' | 'friends' | 'reports' | 'audit'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'checks' | 'credit' | 'calendar' | 'friends' | 'reports' | 'audit' | 'market_ai'>('home');
   const [activeSlide, setActiveSlide] = useState(0);
   const [showCheckModal, setShowCheckModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
@@ -37,6 +40,7 @@ const SteelOnline: React.FC = () => {
     { id: 'sp-1', price: '590909', name: 'پروفیل 40*40 ضخامت 2' },
     { id: 'sp-2', price: '570909', name: 'ورق سیاه 3 فولاد مبارکه' },
   ]);
+  const [liveProducts, setLiveProducts] = useState(STEEL_PRODUCTS);
 
   // --- Split Flap Animation Logic ---
   useEffect(() => {
@@ -48,6 +52,19 @@ const SteelOnline: React.FC = () => {
     }, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  // --- Live Product Price Simulation ---
+  useEffect(() => {
+      if (viewMode === 'storefront') {
+          const interval = setInterval(() => {
+              setLiveProducts(prev => prev.map(p => ({
+                  ...p,
+                  price: p.price + Math.floor(Math.random() * 200 - 100)
+              })));
+          }, 3000);
+          return () => clearInterval(interval);
+      }
+  }, [viewMode]);
 
   // --- INTERNAL COMPONENTS ---
 
@@ -179,6 +196,107 @@ const SteelOnline: React.FC = () => {
             </div>
         </div>
     </div>
+  );
+
+  const MarketAIView = () => (
+      <div className="space-y-6 animate-fadeIn">
+          {/* Header */}
+          <div className="bg-[#1a202c] p-6 rounded-xl text-white shadow-lg relative overflow-hidden">
+              <div className="relative z-10">
+                  <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
+                      <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
+                      هوش بازار (AI Market Intelligence)
+                  </h3>
+                  <p className="text-gray-400 text-sm">پیش‌بینی قیمت آهن‌آلات با استفاده از مدل‌های Gemini و تحلیل سنتیمنت بازار</p>
+              </div>
+              <div className="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-blue-900/50 to-transparent"></div>
+          </div>
+
+          {/* Live Tickers */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {STEEL_MARKET_PRICES.map((item) => (
+                  <div key={item.id} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col">
+                      <div className="flex justify-between items-center mb-2">
+                          <span className="font-bold text-gray-700">{item.name}</span>
+                          <span className={`text-xs px-2 py-1 rounded ${item.trend === 'up' ? 'bg-green-100 text-green-700' : item.trend === 'down' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}>
+                              {item.change > 0 ? '+' : ''}{item.change}%
+                          </span>
+                      </div>
+                      <div className="text-2xl font-bold text-[#1a365d] mb-2">{item.current.toLocaleString()} <span className="text-xs font-normal text-gray-400">ریال</span></div>
+                      
+                      {/* Mini Sparkline */}
+                      <div className="h-10 mt-auto">
+                          <ResponsiveContainer width="100%" height="100%">
+                              <LineChart data={item.history.map((val, idx) => ({ idx, val }))}>
+                                  <Line type="monotone" dataKey="val" stroke={item.trend === 'up' ? '#48bb78' : '#f56565'} strokeWidth={2} dot={false} />
+                              </LineChart>
+                          </ResponsiveContainer>
+                      </div>
+                  </div>
+              ))}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Prediction Chart */}
+              <div className="lg:col-span-2 bg-white p-6 rounded-xl border border-gray-200 shadow-sm h-[400px]">
+                  <h3 className="font-bold text-[#1a365d] mb-6 flex justify-between">
+                      <span>پیش‌بینی ۷ روزه قیمت میلگرد</span>
+                      <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">Confidence: 85%</span>
+                  </h3>
+                  <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={STEEL_AI_PREDICTION}>
+                          <defs>
+                              <linearGradient id="colorActual" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor="#1a365d" stopOpacity={0.1}/>
+                                  <stop offset="95%" stopColor="#1a365d" stopOpacity={0}/>
+                              </linearGradient>
+                              <linearGradient id="colorPred" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor="#805ad5" stopOpacity={0.1}/>
+                                  <stop offset="95%" stopColor="#805ad5" stopOpacity={0}/>
+                              </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                          <XAxis dataKey="day" tick={{fontSize: 12}} />
+                          <YAxis domain={['auto', 'auto']} tick={{fontSize: 12}} />
+                          <Tooltip />
+                          <Legend />
+                          <Area type="monotone" dataKey="actual" name="قیمت واقعی" stroke="#1a365d" fillOpacity={1} fill="url(#colorActual)" strokeWidth={2} />
+                          <Area type="monotone" dataKey="predicted" name="پیش‌بینی AI" stroke="#805ad5" strokeDasharray="5 5" fillOpacity={1} fill="url(#colorPred)" strokeWidth={2} />
+                      </AreaChart>
+                  </ResponsiveContainer>
+              </div>
+
+              {/* Sentiment Engine */}
+              <div className="lg:col-span-1 bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col">
+                  <h3 className="font-bold text-[#1a365d] mb-4">موتور تحلیل احساسات بازار</h3>
+                  <div className="space-y-4 flex-1 overflow-y-auto">
+                      {MARKET_SENTIMENT_DRIVERS.map((driver, idx) => (
+                          <div key={idx} className="border-b border-gray-50 pb-3">
+                              <div className="flex justify-between mb-1">
+                                  <span className="text-sm font-medium text-gray-700">{driver.name}</span>
+                                  <span className={`text-xs font-bold ${driver.sentiment === 'Bullish' ? 'text-green-600' : driver.sentiment === 'Bearish' ? 'text-red-600' : 'text-gray-600'}`}>
+                                      {driver.sentiment}
+                                  </span>
+                              </div>
+                              <div className="w-full bg-gray-100 rounded-full h-1.5">
+                                  <div 
+                                      className={`h-1.5 rounded-full ${driver.sentiment === 'Bullish' ? 'bg-green-500' : driver.sentiment === 'Bearish' ? 'bg-red-500' : 'bg-gray-400'}`}
+                                      style={{width: `${driver.score}%`}}
+                                  ></div>
+                              </div>
+                          </div>
+                      ))}
+                  </div>
+                  
+                  {/* Trade Signal */}
+                  <div className="mt-4 bg-gray-50 p-4 rounded-xl text-center">
+                      <p className="text-xs text-gray-500 mb-1">سیگنال پیشنهادی هوشمند</p>
+                      <p className="text-2xl font-bold text-green-600">خرید قوی (Strong Buy)</p>
+                      <p className="text-[10px] text-gray-400 mt-1">بر اساس واگرایی مثبت در قیمت جهانی و کف‌سازی دلار</p>
+                  </div>
+              </div>
+          </div>
+      </div>
   );
 
   const ReportsView = () => {
@@ -447,7 +565,7 @@ const SteelOnline: React.FC = () => {
                                    <Cell fill="#48bb78" />
                                    <Cell fill="#ecc94b" />
                                    <Cell fill="#f56565" />
-                               </Pie>
+                                </Pie>
                                <Tooltip contentStyle={{borderRadius: '8px', fontFamily: 'Vazirmatn'}} />
                                <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{fontFamily: 'Vazirmatn', fontSize: '12px'}} />
                            </PieChart>
@@ -920,6 +1038,13 @@ const SteelOnline: React.FC = () => {
              داشبورد اصلی
          </button>
          <button 
+             onClick={() => { setActiveTab('market_ai'); setMobileMenuOpen(false); }}
+             className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-bold rounded-xl transition-colors ${activeTab === 'market_ai' ? 'bg-[#f0fff4] text-[#276749]' : 'text-gray-600 hover:bg-gray-50'}`}
+         >
+             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+             هوش بازار (Live AI)
+         </button>
+         <button 
              onClick={() => { setActiveTab('checks'); setMobileMenuOpen(false); }}
              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-bold rounded-xl transition-colors ${activeTab === 'checks' ? 'bg-[#fffaf0] text-[#c05621]' : 'text-gray-600 hover:bg-gray-50'}`}
          >
@@ -1118,6 +1243,7 @@ const SteelOnline: React.FC = () => {
                             {activeTab === 'calendar' && 'تقویم سررسید'}
                             {activeTab === 'reports' && 'گزارشات مالی'}
                             {activeTab === 'audit' && 'برنامه‌ریزی حسابرسی'}
+                            {activeTab === 'market_ai' && 'هوش بازار'}
                         </span>
                     </div>
 
@@ -1129,12 +1255,22 @@ const SteelOnline: React.FC = () => {
                     {activeTab === 'calendar' && <CalendarView />}
                     {activeTab === 'audit' && <AuditPlanningView />}
                     {activeTab === 'reports' && <ReportsView />}
+                    {activeTab === 'market_ai' && <MarketAIView />}
                  </>
              ) : (
-                 // --- STOREFRONT VIEW (Original) ---
+                 // --- STOREFRONT VIEW (Live Shopping) ---
                  <div className="animate-fadeIn">
+                    {/* Live Connection Status */}
+                    <div className="bg-[#1a365d] text-white text-xs px-4 py-2 rounded-t-xl flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                            <span>متصل به بازار آهن تهران (steelonline20.ir)</span>
+                        </div>
+                        <span className="opacity-80">آخرین بروزرسانی: همین لحظه</span>
+                    </div>
+
                     {/* Hero Slider */}
-                    <div className="relative w-full h-[200px] md:h-[400px] rounded-2xl overflow-hidden group shadow-lg mb-8">
+                    <div className="relative w-full h-[200px] md:h-[400px] rounded-b-2xl overflow-hidden group shadow-lg mb-8">
                         <div className={`absolute inset-0 transition-opacity duration-500 ${activeSlide === 0 ? 'opacity-100' : 'opacity-0'}`}>
                             <div className="w-full h-full bg-gradient-to-r from-[#2c3e50] to-[#3498db] flex items-center justify-center text-white text-3xl font-bold">
                                 تضمین بهترین قیمت آهن‌آلات
@@ -1150,7 +1286,7 @@ const SteelOnline: React.FC = () => {
                     </div>
 
                     {/* Split Flap Section */}
-                    <section className="min-h-[400px] py-[40px] relative bg-gradient-to-l from-[#6B0029] to-[#620025] overflow-hidden rounded-2xl shadow-xl mb-8">
+                    <section className="min-h-[250px] py-[40px] relative bg-gradient-to-l from-[#6B0029] to-[#620025] overflow-hidden rounded-2xl shadow-xl mb-8">
                         <div className="clock opacity-20">
                             <div className="hour" style={{transform: 'rotate(45deg)'}}></div>
                             <div className="min" style={{transform: 'rotate(180deg)'}}></div>
@@ -1158,29 +1294,65 @@ const SteelOnline: React.FC = () => {
                         </div>
 
                         <div className="container mx-auto px-6 relative z-10">
-                            <div className="text-white text-right mb-10">
-                                <h2 className="text-3xl md:text-5xl font-bold mb-4">با <span className="text-[#00D3BD]">حرفه‌ای‌ها</span> خرید کنید.</h2>
-                                <p className="text-lg opacity-80">مشاهده لحظه‌ای قیمت‌ها در تابلوی اختصاصی استیل آنلاین</p>
+                            <div className="text-white text-right mb-6">
+                                <h2 className="text-2xl md:text-3xl font-bold mb-2">با <span className="text-[#00D3BD]">حرفه‌ای‌ها</span> خرید کنید.</h2>
+                                <p className="text-sm opacity-80">مشاهده لحظه‌ای قیمت‌ها در تابلوی اختصاصی استیل آنلاین</p>
                             </div>
-                            <div className="flex overflow-x-auto gap-6 pb-8 snap-x">
+                            <div className="flex overflow-x-auto gap-6 pb-4 snap-x">
                                 {splitFlapPrices.map((item, idx) => (
-                                    <div key={idx} className="min-w-[300px] md:min-w-[400px] snap-center bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6">
-                                        <h3 className="text-white text-2xl font-bold mb-2">{item.name.split(' ')[0]}</h3>
-                                        <p className="text-white/70 text-sm mb-6">{item.name}</p>
-                                        <div className="mb-8">
-                                            <p className="text-white text-sm mb-2">قیمت همین لحظه (ریال)</p>
+                                    <div key={idx} className="min-w-[280px] snap-center bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-4">
+                                        <h3 className="text-white text-lg font-bold mb-1 truncate">{item.name.split(' ')[0]}</h3>
+                                        <p className="text-white/70 text-xs mb-4 truncate">{item.name}</p>
+                                        <div className="mb-4">
+                                            <p className="text-white text-[10px] mb-1">قیمت (ریال)</p>
                                             <div className="flex justify-center dir-ltr gap-1">
                                                 {item.price.split('').map((digit, dIdx) => (
-                                                    <div key={dIdx} className="splitflap">{digit}</div>
+                                                    <div key={dIdx} className="splitflap text-lg h-10 min-w-[20px] leading-10">{digit}</div>
                                                 ))}
                                             </div>
                                         </div>
-                                        <button className="w-full py-3 rounded border border-[#00E8CE] text-[#00E8CE] font-bold hover:bg-[#00E8CE] hover:text-[#6B0029] transition-colors">
-                                            مشاهده لیست قیمت
-                                        </button>
                                     </div>
                                 ))}
                             </div>
+                        </div>
+                    </section>
+
+                    {/* Live Shopping Grid */}
+                    <section className="container mx-auto">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-2xl font-bold text-[#1a365d]">لیست قیمت آنلاین</h2>
+                            <div className="flex gap-2">
+                                <button className="px-3 py-1 bg-white border rounded text-sm text-gray-600 hover:bg-gray-50">میلگرد</button>
+                                <button className="px-3 py-1 bg-white border rounded text-sm text-gray-600 hover:bg-gray-50">تیرآهن</button>
+                                <button className="px-3 py-1 bg-white border rounded text-sm text-gray-600 hover:bg-gray-50">ورق</button>
+                            </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
+                            {liveProducts.map((product) => (
+                                <div key={product.id} className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-shadow border border-gray-100 overflow-hidden group">
+                                    <div className="h-40 bg-gray-200 relative overflow-hidden">
+                                        <img src={product.image} alt={product.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                                        <div className="absolute top-2 right-2 bg-red-500 text-white text-[10px] px-2 py-1 rounded-full animate-pulse">
+                                            LIVE
+                                        </div>
+                                    </div>
+                                    <div className="p-4">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <h3 className="font-bold text-gray-800 text-sm">{product.name}</h3>
+                                            <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">{product.category}</span>
+                                        </div>
+                                        <div className="flex items-end gap-1 mb-4">
+                                            <span className="text-xl font-bold text-[#1a365d]">{product.price.toLocaleString()}</span>
+                                            <span className="text-xs text-gray-500 mb-1">ریال / {product.unit}</span>
+                                        </div>
+                                        <button className="w-full py-2 bg-[#1a365d] text-white rounded-lg text-sm font-bold hover:bg-[#132845] transition-colors flex items-center justify-center gap-2">
+                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                                            افزودن به سفارش
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </section>
 

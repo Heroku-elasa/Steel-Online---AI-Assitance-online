@@ -9,6 +9,8 @@
 
 
 
+
+
 export const HESABRASYAR_SYSTEM_INSTRUCTION = `
 شما «حسابرس‌یار» هستید — قوی‌ترین هوش مصنوعی حسابرسی، تراز مالیاتی و تشخیص تقلب ایران ۱۴۰۴
 طراحی شده بر اساس استانداردهای جدید حسابداری ایران (بخشنامه‌های ۹۸، ۹۹ و ۱۴۰۴ سازمان حسابرسی).
@@ -317,4 +319,37 @@ export const STEEL_FRIENDS_LIST = [
   { id: 1, name: 'آقای محمدی', company: 'شرکت تامین فولاد', phone: '09121234567', rating: 5, checksTransferred: 12, transferredAmount: 8500000000, successful: 11, bounced: 1, currentChecks: [{amount: 500000000, due: '1404/04/15'}, {amount: 300000000, due: '1404/04/20'}] },
   { id: 2, name: 'خانم احمدی', company: 'کارمند بانک ملت', phone: '09129876543', rating: 4, checksTransferred: 8, transferredAmount: 4500000000, successful: 6, bounced: 0, currentChecks: [] },
   { id: 3, name: 'آقای رضایی', company: 'واسطه بازار', phone: '09125554433', rating: 3, checksTransferred: 5, transferredAmount: 2100000000, successful: 3, bounced: 1, currentChecks: [{amount: 200000000, due: '1404/05/01'}] },
+];
+
+export const STEEL_PRODUCTS = [
+  { id: 1, name: 'میلگرد ۱۴ اصفهان', price: 24500, unit: 'کیلوگرم', category: 'rebar', image: 'https://placehold.co/300x200/2c3e50/ffffff?text=Rebar+14' },
+  { id: 2, name: 'تیرآهن ۱۸ ذوب آهن', price: 28900, unit: 'کیلوگرم', category: 'beam', image: 'https://placehold.co/300x200/2c3e50/ffffff?text=Beam+18' },
+  { id: 3, name: 'ورق سیاه ۲ میل فولاد', price: 31000, unit: 'کیلوگرم', category: 'sheet', image: 'https://placehold.co/300x200/2c3e50/ffffff?text=Sheet+2mm' },
+  { id: 4, name: 'پروفیل ۴۰×۴۰ ضخامت ۲', price: 34500, unit: 'کیلوگرم', category: 'profile', image: 'https://placehold.co/300x200/2c3e50/ffffff?text=Profile+40x40' },
+  { id: 5, name: 'نبشی ۴×۴۰×۴۰ شکفته', price: 26800, unit: 'کیلوگرم', category: 'angle', image: 'https://placehold.co/300x200/2c3e50/ffffff?text=Angle+4' },
+  { id: 6, name: 'ناودانی ۱۰ اروپایی', price: 29500, unit: 'کیلوگرم', category: 'channel', image: 'https://placehold.co/300x200/2c3e50/ffffff?text=Channel+10' },
+];
+
+// Steel Market AI Data
+export const STEEL_MARKET_PRICES = [
+    { id: 1, name: 'میلگرد ۱۴ اصفهان', current: 24500, change: 1.2, trend: 'up', history: [24000, 24100, 24300, 24200, 24500] },
+    { id: 2, name: 'تیرآهن ۱۸ ذوب', current: 28900, change: -0.5, trend: 'down', history: [29000, 29100, 29050, 28950, 28900] },
+    { id: 3, name: 'ورق سیاه ۲ میل', current: 31000, change: 0.0, trend: 'flat', history: [31000, 31000, 31000, 31000, 31000] },
+];
+
+export const STEEL_AI_PREDICTION = [
+    { day: 'امروز', actual: 24500, predicted: 24500 },
+    { day: 'فردا', actual: null, predicted: 24700 },
+    { day: '۲ روز بعد', actual: null, predicted: 24900 },
+    { day: '۳ روز بعد', actual: null, predicted: 25100 },
+    { day: '۴ روز بعد', actual: null, predicted: 25000 },
+    { day: '۵ روز بعد', actual: null, predicted: 24800 },
+    { day: '۶ روز بعد', actual: null, predicted: 24600 },
+];
+
+export const MARKET_SENTIMENT_DRIVERS = [
+    { name: 'نرخ ارز (دلار)', impact: 'High', sentiment: 'Bearish', score: 30 },
+    { name: 'قیمت جهانی بیلت', impact: 'Medium', sentiment: 'Bullish', score: 75 },
+    { name: 'تقاضای مسکن', impact: 'High', sentiment: 'Neutral', score: 50 },
+    { name: 'صادرات فولاد', impact: 'Medium', sentiment: 'Bullish', score: 80 },
 ];

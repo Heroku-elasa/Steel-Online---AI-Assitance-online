@@ -1,250 +1,182 @@
 
-
-
-
-
-
-
 import React, { useState, useRef, useEffect } from 'react';
-import { Checkpoint, PageKey, SaveStatus, useLanguage, useAppearance } from '../types';
+import { useLanguage, Page, User } from '../types';
 
 interface SiteHeaderProps {
-    currentPage: string;
-    setPage: (page: 'home' | PageKey) => void;
-    checkpoints: Checkpoint[];
-    onCreateCheckpoint: () => void;
-    onRestoreCheckpoint: (id: string) => void;
-    onDeleteCheckpoint: (id: string) => void;
-    saveStatus: SaveStatus;
-    onOpenSettings: () => void;
-    onOpenAIGuide: () => void;
+    currentPage: Page;
+    setPage: (page: Page) => void;
+    isAuthenticated: boolean;
+    user: User | null;
+    onLoginClick: () => void;
+    onLogoutClick: () => void;
+    onSearchClick: () => void;
 }
 
-const SiteHeader: React.FC<SiteHeaderProps> = ({ currentPage, setPage, checkpoints, onCreateCheckpoint, onRestoreCheckpoint, onDeleteCheckpoint, saveStatus, onOpenSettings, onOpenAIGuide }) => {
+const SiteHeader: React.FC<SiteHeaderProps> = ({ currentPage, setPage, isAuthenticated, user, onLoginClick, onLogoutClick, onSearchClick }) => {
   const { language, setLanguage, t } = useLanguage();
-  const { theme, toggleTheme, customLogo } = useAppearance();
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
-  const [isCheckpointMenuOpen, setIsCheckpointMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const langMenuRef = useRef<HTMLDivElement>(null);
-  const checkpointMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (langMenuRef.current && !langMenuRef.current.contains(event.target as Node)) {
         setIsLangMenuOpen(false);
       }
-      if (checkpointMenuRef.current && !checkpointMenuRef.current.contains(event.target as Node)) {
-        setIsCheckpointMenuOpen(false);
-      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
   
-  const handlePageChange = (page: 'home' | PageKey) => {
+  const handlePageChange = (page: Page) => {
       setPage(page);
-      window.scrollTo(0, 0);
       setIsMobileMenuOpen(false);
+      window.scrollTo(0, 0);
   }
-
-  const handleScrollTo = (id: string) => {
-    if (currentPage !== 'home') {
-      handlePageChange('home');
-      setTimeout(() => {
-        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
-    } else {
-      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-    }
-    setIsMobileMenuOpen(false);
-  };
-
-  // Optimized Menu Order: Home -> Pricing -> Tools -> About -> Contact
-  const navLinks = [
-    { key: 'home', text: t('header.home'), action: () => handlePageChange('home') },
-    { key: 'pricing', text: t('header.pricing'), action: () => handlePageChange('pricing') },
-    { key: 'court_assistant', text: t('header.courtAssistant'), action: () => handlePageChange('court_assistant') },
-    { key: 'legal_drafter', text: t('header.aiAssistant'), action: () => handlePageChange('legal_drafter') },
-    { key: 'lawyer_finder', text: t('header.lawyerFinder'), action: () => handlePageChange('lawyer_finder') },
-    { key: 'content_hub', text: t('header.contentHub'), action: () => handlePageChange('content_hub') },
-    { key: 'about', text: t('header.about'), action: () => handleScrollTo('about') },
-    { key: 'contact', text: t('header.contact'), action: () => handleScrollTo('footer'), isPriority: true },
-  ];
   
-  const SaveStatusIndicator: React.FC = () => {
-    let text: string | null = null;
-    let icon: React.ReactNode = null;
-    let key: string = saveStatus;
+  const navLinks: { key: Page, text: string, action: () => void }[] = [
+    { key: 'home', text: t('header.home'), action: () => handlePageChange('home') },
+    { key: 'iron_snapp', text: t('header.ironSnapp'), action: () => handlePageChange('iron_snapp') },
+    { key: 'test_recommender', text: t('header.recommendationEngine'), action: () => handlePageChange('test_recommender') },
+    { key: 'sample_dropoff', text: t('header.distributorFinder'), action: () => handlePageChange('sample_dropoff') },
+    { key: 'tools', text: t('header.tools'), action: () => handlePageChange('tools') },
+    { key: 'content_hub', text: t('header.contentHub'), action: () => handlePageChange('content_hub') },
+    { key: 'blog', text: t('header.blog'), action: () => handlePageChange('blog') },
+    { key: 'our_experts', text: t('header.ourTeam'), action: () => handlePageChange('our_experts') },
+  ];
 
-    switch (saveStatus) {
-        case 'saving':
-            text = 'Saving...';
-            icon = <svg className="animate-spin h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>;
-            break;
-        case 'saved':
-            text = 'Saved';
-            icon = <svg className="h-4 w-4 text-brand-gold" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>;
-            key = `${saveStatus}-${Date.now()}`; // Force re-render for animation
-            break;
-        default:
-            return null; // Don't show anything for 'idle'
-    }
-
-    return (
-        <div key={key} className="flex items-center space-x-2 rtl:space-x-reverse text-xs text-gray-400 animate-fade-in">
-            {icon}
-            <span>{text}</span>
-        </div>
-    );
-  };
-
+  const SocialIcon: React.FC<{ href: string; children: React.ReactNode; label: string }> = ({ href, children, label }) => (
+    <a href={href} target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-corp-red transition-colors p-4" aria-label={label}>
+      {children}
+    </a>
+  );
 
   return (
-    <header className="bg-white dark:bg-[#111827] sticky top-0 z-50 border-b border-gray-200 dark:border-gray-800 shadow-lg transition-colors duration-300">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
-          <div className="flex items-center lg:flex-1 overflow-hidden">
-            <a href="#" onClick={(e) => { e.preventDefault(); handlePageChange('home'); }} className="flex-shrink-0 flex items-center space-x-3 rtl:space-x-reverse group mr-4 rtl:ml-4">
-              <img src={customLogo} alt="Adl Pendar Logo" className="w-11 h-11 sm:w-14 sm:h-14 rounded-full object-cover border-2 border-brand-gold group-hover:scale-105 transition-transform" />
-              <div className="flex flex-col">
-                  <span className="font-bold text-lg sm:text-xl text-gray-800 dark:text-brand-gold transition-colors">عدل پندار</span>
-                  <span className="text-[10px] text-gray-500 dark:text-gray-400 tracking-wider hidden sm:inline">موسسه حقوقی</span>
-              </div>
-            </a>
-            
-            {/* Desktop Nav - Optimized spacing, tighter on lg, normal on xl */}
-            <nav className="hidden lg:flex items-center gap-1 xl:gap-3 rtl:space-x-reverse mx-2 flex-nowrap overflow-x-auto no-scrollbar">
-              {navLinks.map((link, idx) => (
-                  <button 
-                    key={idx} 
-                    onClick={link.action} 
-                    className={`
-                        px-2 xl:px-3 py-2 text-xs xl:text-sm font-medium transition-all whitespace-nowrap rounded-md
-                        ${link.isPriority 
-                            ? 'bg-brand-gold text-brand-blue hover:bg-yellow-300 shadow-md transform hover:scale-105 border border-transparent' 
-                            : 'text-gray-600 dark:text-gray-300 hover:text-brand-gold dark:hover:text-brand-gold hover:bg-gray-50 dark:hover:bg-white/5'
-                        }
-                        ${currentPage === link.key && !link.isPriority ? 'text-brand-gold dark:text-brand-gold font-bold bg-gray-50 dark:bg-white/5' : ''}
-                    `}
-                  >
-                      {link.text}
-                  </button>
-              ))}
-            </nav>
+    <header className="bg-white sticky top-0 z-50 shadow-md">
+      {/* Top Bar */}
+      <div className="bg-slate-100 border-b border-slate-200">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between text-xs text-slate-700 min-h-[48px]">
+          <div className="flex items-center">
+            <SocialIcon href="https://t.me/steelonline20" label="Telegram">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M22,3.13,1.5,10.61,8.37,13,10.88,20.5,17.2,14.65Z"/></svg>
+            </SocialIcon>
+            <SocialIcon href="https://www.instagram.com/steelonline20/" label="Instagram">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12,2.163c3.204,0,3.584.012,4.85.07,3.252.148,4.771,1.691,4.919,4.919.058,1.265.069,1.645.069,4.85s-.012,3.584-.07,4.85c-.148,3.225-1.664,4.771-4.919,4.919-1.266.058-1.644.07-4.85.07s-3.584-.012-4.85-.07c-3.252-.148-4.771-1.691-4.919-4.919-.058-1.265-.069-1.645-.069-4.85s.012-3.584.07,4.85c.148-3.225,1.664-4.771,4.919-4.919C8.416,2.175,8.796,2.163,12,2.163M12,0C8.74,0,8.333.014,7.053.072,2.695.272.273,2.69.073,7.052.014,8.333,0,8.74,0,12s.014,3.667.072,4.947c.2,4.358,2.618,6.78,6.98,6.98C8.333,23.986,8.74,24,12,24s3.667-.014,4.947-.072c4.358-.2,6.78-2.618,6.98-6.98C23.986,15.667,24,15.259,24,12s-.014-3.667-.072-4.947c-.2-4.358-2.618-6.78-6.98-6.98C15.667.014,15.259,0,12,0Zm0,5.838a6.162,6.162,0,1,0,0,12.324A6.162,6.162,0,0,0,12,5.838Zm0,10.162a4,4,0,1,1,0-8,4,4,0,0,1,0,8Zm6.406-11.845a1.44,1.44,0,1,0,0,2.88,1.44,1.44,0,0,0,0-2.88Z"/></svg>
+            </SocialIcon>
+             <SocialIcon href="https://wa.me/989122041655" label="WhatsApp">
+               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.04,2A10,10,0,0,0,2,12.04,10,10,0,0,0,12.04,22c5.52,0,10-4.48,10-10A10,10,0,0,0,12.04,2ZM17.46,16a.4.4,0,0,1-.35.19,1,1,0,0,1-.53-.16l-2.43-1.48-1.46.88a4.92,4.92,0,0,1-2.92.1,4.86,4.86,0,0,1-2.48-2.18,4.72,4.72,0,0,1,.13-3.65,4.7,4.7,0,0,1,2.06-2.1,4.78,4.78,0,0,1,3.46-.17L14.9,8.7a.4.4,0,0,1,.14.54l-.45,1.08a.4.4,0,0,1-.54.14L12.5,9.75a1.59,1.59,0,0,0-1.25.12,1.56,1.56,0,0,0-.81,1,1.5,1.5,0,0,0,.14,1.18l.89.89.89.89.37.37a1.53,1.53,0,0,0,1.07.4,1.5,1.5,0,0,0,1-.26l1.58-.95a.4.4,0,0,1,.54.14l.45,1.08A.4.4,0,0,1,17.46,16Z"/></svg>
+            </SocialIcon>
           </div>
-
-          <div className="flex items-center space-x-1 xl:space-x-2 rtl:space-x-reverse flex-shrink-0">
-             <div className="hidden md:flex items-center ml-2 rtl:mr-2 h-5 min-w-[60px] justify-end">
-               <SaveStatusIndicator />
-            </div>
-            
-            {/* Call Button - Only visible on very large screens to prevent overlap */}
-            <div className="hidden xl:flex items-center space-x-3 rtl:space-x-reverse">
-                 <button 
-                    onClick={() => handleScrollTo('footer')}
-                    className="flex items-center px-4 py-2 border border-brand-gold text-brand-gold rounded-full text-sm hover:bg-brand-gold hover:text-brand-blue transition-all font-bold whitespace-nowrap"
-                 >
-                    <svg className="w-4 h-4 ml-2 rtl:mr-2 rtl:ml-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
-                    {t('home.cta.call')}
-                 </button>
-            </div>
-
-            {/* Settings Toggle */}
-            <button onClick={onOpenAIGuide} title="AI Guide" className="p-2 text-gray-500 dark:text-gray-400 hover:text-brand-gold transition-colors">
-               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            </button>
-
-            {/* Theme Toggle */}
-            <button onClick={toggleTheme} className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                {theme === 'dark' ? (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-                ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
-                )}
-            </button>
-
-            {/* Settings Button */}
-            <button onClick={onOpenSettings} className="p-2 text-gray-500 dark:text-gray-400 hover:text-brand-gold transition-colors" title="Settings">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-            </button>
-
-            {/* Checkpoint Controls */}
-            <div className="hidden md:flex items-center space-x-2 rtl:space-x-reverse border-r border-gray-200 dark:border-gray-700 pr-2 mr-2 rtl:border-r-0 rtl:border-l rtl:pl-2 rtl:ml-2">
-                 <div className="relative" ref={checkpointMenuRef}>
-                  <button
-                      onClick={() => setIsCheckpointMenuOpen(prev => !prev)}
-                      className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-                      title={t('header.projectHistory')}
-                  >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  </button>
-                  {isCheckpointMenuOpen && (
-                      <div className={`absolute mt-2 w-72 bg-white dark:bg-[#1F1F1F] border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-20 ${language === 'fa' ? 'left-0' : 'right-0'}`}>
-                          <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                              <span className="text-sm text-gray-700 dark:text-gray-300">{t('header.projectHistory')}</span>
-                              <button onClick={onCreateCheckpoint} className="text-xs bg-brand-gold text-brand-blue px-2 py-1 rounded hover:bg-yellow-300 transition-colors">{t('header.createCheckpoint')}</button>
-                          </div>
-                          {checkpoints.length > 0 ? (
-                              <ul className="py-1 max-h-80 overflow-y-auto">
-                                  {checkpoints.map(ckpt => (
-                                      <li key={ckpt.id} className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors border-b border-gray-100 dark:border-gray-800 last:border-0">
-                                         <div className="flex justify-between items-center">
-                                              <div className="text-sm text-gray-700 dark:text-gray-300 truncate pr-2">{ckpt.name}</div>
-                                              <div className="flex-shrink-0 flex items-center space-x-1">
-                                                  <button onClick={() => onRestoreCheckpoint(ckpt.id)} title={t('header.restore')} className="p-1 text-gray-400 hover:text-brand-gold"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" /></svg></button>
-                                                  <button onClick={() => onDeleteCheckpoint(ckpt.id)} title={t('header.delete')} className="p-1 text-gray-400 hover:text-red-400"><svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg></button>
-                                              </div>
-                                         </div>
-                                      </li>
-                                  ))}
-                              </ul>
-                          ) : (
-                              <div className="text-center text-gray-500 py-4 px-3 text-xs">{t('header.noCheckpoints')}</div>
-                          )}
-                      </div>
-                  )}
-              </div>
-            </div>
-
-            {/* Language Switcher */}
-            <div className="relative" ref={langMenuRef}>
-                <button onClick={() => setIsLangMenuOpen(!isLangMenuOpen)} className="flex items-center text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors p-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m4 13l4-4M19 9l-4 4M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    <span className="font-semibold text-xs mx-1">{language === 'fa' ? 'en' : 'fa'}</span>
-                </button>
-                {isLangMenuOpen && (
-                    <div className={`absolute mt-2 w-28 bg-white dark:bg-[#1F1F1F] border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-20 ${language === 'fa' ? 'left-0' : 'right-0'}`}>
-                        <ul className="py-1">
-                            <li><button onClick={() => { setLanguage('fa'); setIsLangMenuOpen(false); }} className="block w-full text-right px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">فارسی</button></li>
-                            <li><button onClick={() => { setLanguage('en'); setIsLangMenuOpen(false); }} className="block w-full text-right px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">English</button></li>
-                        </ul>
-                    </div>
-                )}
-            </div>
-            
-            {/* Mobile Menu Button */}
-            <div className="lg:hidden mr-2 rtl:ml-2 rtl:mr-0">
-                <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-gray-600 dark:text-gray-300">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isMobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} /></svg>
-                </button>
-            </div>
+          <div className="flex items-center gap-6 font-medium">
+             <button className="hover:text-corp-red transition-colors p-4" onClick={() => document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth'})}>FAQ</button>
+             <a href="tel:+982122041655" className="hover:text-corp-red transition-colors font-mono dir-ltr p-4" aria-label="Call Sales">021-22041655</a>
           </div>
         </div>
       </div>
       
-      {/* Mobile Menu Dropdown */}
-      {isMobileMenuOpen && (
-        <div className="lg:hidden bg-white dark:bg-[#1F1F1F] border-t border-gray-200 dark:border-gray-800 py-2 animate-fade-in">
-            {navLinks.map((link, idx) => (
-                <button 
-                    key={idx} 
-                    onClick={() => { link.action(); setIsMobileMenuOpen(false); }}
-                    className={`block w-full text-right px-4 py-3 text-sm font-medium border-b border-gray-100 dark:border-gray-800 last:border-0 ${currentPage === link.key ? 'text-brand-gold bg-gray-50 dark:bg-white/5' : 'text-gray-600 dark:text-gray-300'}`}
-                >
+      {/* Main Navigation */}
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-20">
+          {/* Logo */}
+          <div className="flex items-center">
+            <button onClick={() => setPage('home')} className="flex-shrink-0 flex items-center gap-2 group p-2 -ml-2" aria-label="Go to Home">
+               <img src="https://i.sstatic.net/zhhxJn5n.png" alt="Steel Online 20" className="h-8 w-auto" width="32" height="32" />
+               <span className="text-xl font-bold text-slate-900 group-hover:text-corp-red transition-colors hidden sm:block md:hidden xl:block">Steel Online 20</span>
+            </button>
+          </div>
+          
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center gap-1 lg:gap-2">
+             {navLinks.map(link => (
+                  <button key={link.key} onClick={link.action} className={`text-slate-700 hover:text-corp-red px-4 py-4 rounded-md text-sm font-semibold transition-colors whitespace-nowrap ${currentPage === link.key ? 'text-corp-red bg-red-50' : ''}`}>
                     {link.text}
+                  </button>
+              ))}
+          </nav>
+
+          {/* Right side controls */}
+          <div className="flex items-center gap-3">
+             <button onClick={() => setPage('dashboard')} className="hidden sm:block px-3 py-1 bg-slate-800 text-white text-xs rounded hover:bg-slate-700 transition-colors">
+                {t('header.dashboard')}
+            </button>
+
+            <button onClick={onSearchClick} className="p-4 text-slate-500 hover:text-corp-red transition-colors" aria-label="Search">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            </button>
+            <div className="relative" ref={langMenuRef}>
+                <button onClick={() => setIsLangMenuOpen(!isLangMenuOpen)} className="p-4 text-slate-500 hover:text-corp-red transition-colors" aria-label="Change language">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5h12M9 3v2m4 13l4-4M19 9l-4 4M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 </button>
-            ))}
+                {isLangMenuOpen && (
+                    <div className="absolute left-0 rtl:right-0 rtl:left-auto mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
+                        <div className="p-1">
+                            <button onClick={() => { setLanguage('en'); setIsLangMenuOpen(false); }} className={`w-full text-left block px-4 py-3 text-sm rounded-md ${language === 'en' ? 'bg-corp-red text-white' : 'text-slate-700 hover:bg-slate-100'}`}>English</button>
+                            <button onClick={() => { setLanguage('fa'); setIsLangMenuOpen(false); }} className={`w-full text-left block px-4 py-3 text-sm rounded-md ${language === 'fa' ? 'bg-corp-red text-white' : 'text-slate-700 hover:bg-slate-100'}`}>فارسی</button>
+                            <button onClick={() => { setLanguage('ar'); setIsLangMenuOpen(false); }} className={`w-full text-left block px-4 py-3 text-sm rounded-md ${language === 'ar' ? 'bg-corp-red text-white' : 'text-slate-700 hover:bg-slate-100'}`}>العربية</button>
+                        </div>
+                    </div>
+                )}
+            </div>
+            
+             <div className="hidden sm:block">
+                {isAuthenticated && user ? (
+                    <div className="flex items-center gap-2">
+                        {user.picture && <img src={user.picture} alt={user.name} title={user.name} className="h-8 w-8 rounded-full" width="32" height="32"/>}
+                        <button onClick={onLogoutClick} className="px-4 py-2 bg-corp-red text-white font-semibold rounded-md hover:bg-corp-red-dark transition-colors text-sm">
+                            {t('header.logout')}
+                        </button>
+                    </div>
+                ) : (
+                    <button onClick={onLoginClick} className="px-4 py-2 bg-slate-100 border border-slate-300 text-slate-700 font-semibold rounded-md hover:bg-slate-200 transition-colors text-sm">
+                        {t('header.login')}
+                    </button>
+                )}
+            </div>
+            
+            {/* Mobile Menu Button */}
+            <div className="flex md:hidden">
+              <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-4 rounded-md text-slate-500 hover:text-slate-900 hover:bg-slate-100" aria-label="Open main menu">
+                {isMobileMenuOpen ? (
+                   <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                ) : (
+                  <svg className="h-7 w-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Menu */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden animate-fade-in absolute top-full left-0 w-full bg-white shadow-lg border-t border-slate-100 h-screen overflow-y-auto z-50">
+          <div className="px-4 pt-4 pb-6 space-y-2 sm:px-3">
+              {isAuthenticated && user && (
+                  <div className="px-3 py-3 flex items-center gap-3 border-b border-slate-200 mb-2">
+                      {user.picture && <img src={user.picture} alt={user.name} className="h-10 w-10 rounded-full" width="40" height="40" />}
+                      <span className="font-semibold text-slate-800">{user.name}</span>
+                  </div>
+              )}
+               <button onClick={() => { setPage('dashboard'); setIsMobileMenuOpen(false); }} className={`w-full text-right text-slate-700 hover:bg-red-50 hover:text-corp-red block px-4 py-4 rounded-md text-lg font-medium ${currentPage === 'dashboard' ? 'bg-red-50 text-corp-red' : ''}`}>
+                    {t('header.dashboard')}
+               </button>
+              {navLinks.map(link => (
+                  <button key={link.key} onClick={link.action} className={`w-full text-right text-slate-700 hover:bg-red-50 hover:text-corp-red block px-4 py-4 rounded-md text-lg font-medium ${currentPage === link.key ? 'bg-red-50 text-corp-red' : ''}`}>
+                    {link.text}
+                  </button>
+              ))}
+              <div className="pt-6 border-t border-slate-200 mt-4">
+                {isAuthenticated ? (
+                     <button onClick={() => { onLogoutClick(); setIsMobileMenuOpen(false); }} className="w-full text-right text-slate-700 hover:bg-red-50 hover:text-corp-red block px-4 py-4 rounded-md text-lg font-medium">
+                        {t('header.logout')}
+                    </button>
+                ) : (
+                    <button onClick={() => { onLoginClick(); setIsMobileMenuOpen(false); }} className="w-full text-right text-slate-700 hover:bg-red-50 hover:text-corp-red block px-4 py-4 rounded-md text-lg font-medium">
+                        {t('header.login')}
+                    </button>
+                )}
+              </div>
+          </div>
         </div>
       )}
     </header>

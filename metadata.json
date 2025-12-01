@@ -1,5 +1,9 @@
 {
-  "name": "Steelonline based of HesabrasYar - Intelligent Audit Assistant nu2 focuse on finetiuning",
-  "description": "A professional AI-powered internal and external audit assistant tailored for Iranian accounting standards and Teamyar ERP integration.",
-  "requestFramePermissions": []
+  "name": "steelonline20  Hour-Tash Laboratory | Advanced Analysis Services base do site ",
+  "description": "Your AI assistant for food and agricultural testing. Get AI-powered test recommendations, submit samples, and find drop-off locations with Hour-Tash Laboratory.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation",
+    "microphone"
+  ]
 }

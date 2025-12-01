@@ -1,3 +1,8 @@
+// This component is no longer in use.
+import React from 'react';
 
-// This file is obsolete and has been replaced by components/InsuranceServices.tsx
-// It can be safely deleted.
+const DeprecatedReportGenerator: React.FC = () => {
+  return null;
+};
+
+export default DeprecatedReportGenerator;

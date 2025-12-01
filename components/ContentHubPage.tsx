@@ -94,39 +94,6 @@ const ContentHubPage: React.FC<ContentHubPageProps> = ({
             setTimeout(() => setCopySuccess(false), 2000);
         }
     };
-
-    const handlePublish = (platform: SocialPlatform, text: string) => {
-        const encodedText = encodeURIComponent(text);
-        let url = '';
-
-        switch (platform) {
-            case 'twitter':
-                url = `https://twitter.com/intent/tweet?text=${encodedText}`;
-                break;
-            case 'linkedin':
-                // Opens LinkedIn share box but pre-filling text is often restricted by API updates. 
-                // We'll try copying first as fallback.
-                navigator.clipboard.writeText(text);
-                addToast("Text copied. You can paste it in the LinkedIn post.", "info");
-                url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}`;
-                break;
-            case 'facebook':
-                // Facebook Sharer requires a URL primarily. Text pre-fill is deprecated/restricted.
-                // We will copy text and open the sharer.
-                addToast("Text copied. Paste it in the Facebook post.", "info");
-                navigator.clipboard.writeText(text);
-                url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent('https://dadgar.ai')}`;
-                break;
-            case 'instagram':
-                addToast("Instagram does not support web publishing. Text copied to clipboard!", "info");
-                navigator.clipboard.writeText(text);
-                return;
-        }
-
-        if (url) {
-            window.open(url, '_blank', 'width=600,height=600');
-        }
-    };
     
     const handleCopyScript = () => {
         if (!videoScript) return;
@@ -195,16 +162,16 @@ const ContentHubPage: React.FC<ContentHubPageProps> = ({
     return (
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 animate-fade-in">
             <div className="text-center max-w-4xl mx-auto">
-                <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight">{t('contentHub.title')}</h1>
-                <p className="mt-4 text-lg text-slate-600 dark:text-gray-300">{t('contentHub.subtitle')}</p>
+                <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">{t('contentHub.title')}</h1>
+                <p className="mt-4 text-lg text-slate-600">{t('contentHub.subtitle')}</p>
             </div>
 
             <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
                 {/* Left side: Controls */}
-                <div className="bg-white dark:bg-brand-blue/30 p-6 sm:p-8 rounded-lg border border-slate-200 dark:border-gray-700 shadow-lg space-y-8">
+                <div className="bg-white p-6 sm:p-8 rounded-lg border border-slate-200 shadow-lg space-y-8">
                     {/* Step 1: Platform Selection */}
                     <div>
-                        <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">{t('contentHub.platformSelectorTitle')}</h2>
+                        <h2 className="text-xl font-bold text-slate-900 mb-4">{t('contentHub.platformSelectorTitle')}</h2>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                             {(Object.keys(socialIcons) as SocialPlatform[]).map(platform => {
                                 const theme = platformThemes[platform];
@@ -213,12 +180,12 @@ const ContentHubPage: React.FC<ContentHubPageProps> = ({
                                     <button 
                                         key={platform} 
                                         onClick={() => setSelectedPlatform(platform)} 
-                                        className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all duration-200 ${isSelected ? `${theme.bg} ${theme.border}` : 'bg-white dark:bg-gray-800 border-slate-100 dark:border-gray-700 hover:border-slate-200 dark:hover:border-gray-500 hover:bg-slate-50 dark:hover:bg-gray-700'}`}
+                                        className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all duration-200 ${isSelected ? `${theme.bg} ${theme.border}` : 'bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50'}`}
                                     >
                                         <span className={`h-8 w-8 transition-transform duration-200 ${isSelected ? 'scale-110' : 'scale-100'} ${theme.text}`}>
                                             {socialIcons[platform]}
                                         </span>
-                                        <span className={`text-xs font-bold capitalize ${isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-gray-400'}`}>{platform}</span>
+                                        <span className={`text-xs font-bold capitalize ${isSelected ? 'text-slate-900' : 'text-slate-500'}`}>{platform}</span>
                                     </button>
                                 );
                             })}
@@ -227,14 +194,14 @@ const ContentHubPage: React.FC<ContentHubPageProps> = ({
 
                     {/* Step 2: Topic Selection */}
                     <div>
-                        <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">{t('contentHub.topicTitle')}</h2>
-                        <div className="flex border-b border-slate-200 dark:border-gray-700 mb-4">
+                        <h2 className="text-xl font-bold text-slate-900 mb-4">{t('contentHub.topicTitle')}</h2>
+                        <div className="flex border-b border-slate-200 mb-4">
                             {(['trends', 'text', 'search'] as ContentSource[]).map(tab => (
                                 <button key={tab} onClick={() => {
                                     setActiveTab(tab);
                                     setTopic('');
                                     onClearPost();
-                                }} className={`px-4 py-2 text-sm font-semibold transition-colors ${activeTab === tab ? 'border-b-2 border-brand-gold text-brand-gold' : 'text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'}`}>
+                                }} className={`px-4 py-2 text-sm font-semibold transition-colors ${activeTab === tab ? 'border-b-2 border-corp-blue-dark text-corp-blue-dark' : 'text-slate-500 hover:text-slate-900'}`}>
                                     {t(`contentHub.${tab}Tab`)}
                                 </button>
                             ))}
@@ -242,39 +209,39 @@ const ContentHubPage: React.FC<ContentHubPageProps> = ({
                         <div className="min-h-[200px]">
                             {activeTab === 'trends' && (
                                 <div className="space-y-3">
-                                    {isFetchingTrends && <p className="text-slate-500 dark:text-gray-400 text-sm">{t('contentHub.fetchingTrends')}</p>}
+                                    {isFetchingTrends && <p className="text-slate-500 text-sm">{t('contentHub.fetchingTrends')}</p>}
                                     {trendsError && <p className="text-red-500 text-sm">{trendsError}</p>}
                                     {trends && trends.length > 0 && trends.map((trend, i) => (
                                         <button key={i} onClick={() => {
                                             setTopic(trend.contentIdea || trend.title);
                                             setActiveTab('text');
                                             addToast("Content idea loaded. You can edit it now.", "info");
-                                        }} className={`w-full p-3 rounded-md text-left transition-colors border border-slate-100 dark:border-gray-700 bg-slate-50 dark:bg-gray-800 hover:bg-white dark:hover:bg-gray-700 hover:shadow-md group`}>
-                                            <h4 className="font-bold text-slate-800 dark:text-white group-hover:text-brand-gold">{trend.title}</h4>
-                                            <p className="text-xs text-slate-500 dark:text-gray-400 mt-1">{trend.summary}</p>
+                                        }} className={`w-full p-3 rounded-md text-left transition-colors border border-slate-100 bg-slate-50 hover:bg-white hover:shadow-md group`}>
+                                            <h4 className="font-bold text-slate-800 group-hover:text-corp-blue-dark">{trend.title}</h4>
+                                            <p className="text-xs text-slate-500 mt-1">{trend.summary}</p>
                                             {trend.contentIdea && (
-                                                <div className="mt-2 pt-2 border-t border-slate-200 dark:border-gray-600">
-                                                    <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-gray-500">Content Idea:</span>
-                                                    <p className="text-xs text-slate-700 dark:text-gray-300 font-medium">{trend.contentIdea}</p>
+                                                <div className="mt-2 pt-2 border-t border-slate-200">
+                                                    <span className="text-[10px] uppercase font-bold text-slate-400">Content Idea:</span>
+                                                    <p className="text-xs text-slate-700 font-medium">{trend.contentIdea}</p>
                                                 </div>
                                             )}
-                                            <span className="text-[10px] text-brand-gold mt-2 block opacity-0 group-hover:opacity-100 transition-opacity text-right">Click to edit & generate &rarr;</span>
+                                            <span className="text-[10px] text-corp-blue mt-2 block opacity-0 group-hover:opacity-100 transition-opacity text-right">Click to edit & generate &rarr;</span>
                                         </button>
                                     ))}
                                 </div>
                             )}
                             {activeTab === 'text' && (
-                                <textarea value={topic} onChange={e => setTopic(e.target.value)} placeholder={t('contentHub.customTextPlaceholder')} rows={6} className="w-full bg-slate-100 dark:bg-gray-800 border-slate-300 dark:border-gray-600 rounded-md p-3 focus:ring-brand-gold focus:border-brand-gold text-slate-800 dark:text-white text-sm" />
+                                <textarea value={topic} onChange={e => setTopic(e.target.value)} placeholder={t('contentHub.customTextPlaceholder')} rows={6} className="w-full bg-slate-100 border-slate-300 rounded-md p-3 focus:ring-corp-blue-dark focus:border-corp-blue-dark text-slate-800 text-sm" />
                             )}
                              {activeTab === 'search' && (
                                 <div className="space-y-3">
-                                    <p className="text-sm text-slate-500 dark:text-gray-400">{t('contentHub.selectSearchTopic')}</p>
+                                    <p className="text-sm text-slate-500">{t('contentHub.selectSearchTopic')}</p>
                                     <div className="flex flex-wrap gap-2">
                                         {safeSearchSuggestions.map((suggestion: string, i: number) => (
                                             <button
                                                 key={i}
                                                 onClick={() => setTopic(suggestion)}
-                                                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${topic === suggestion ? 'bg-brand-gold text-brand-blue' : 'bg-slate-200 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-300 dark:hover:bg-gray-600'}`}
+                                                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${topic === suggestion ? 'bg-corp-blue-dark text-white' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'}`}
                                             >
                                                 {suggestion}
                                             </button>
@@ -287,32 +254,32 @@ const ContentHubPage: React.FC<ContentHubPageProps> = ({
                      {/* Step 3: Generate */}
                      <div>
                          {topic && (
-                            <div className="p-3 mb-4 bg-slate-100 dark:bg-gray-800 rounded-md border border-slate-200 dark:border-gray-700">
-                                <p className="text-xs text-slate-500 dark:text-gray-400 uppercase font-bold">Selected Topic:</p>
-                                <p className="text-sm text-slate-800 dark:text-white font-semibold line-clamp-3">{topic}</p>
+                            <div className="p-3 mb-4 bg-slate-100 rounded-md border border-slate-200">
+                                <p className="text-xs text-slate-500 uppercase font-bold">Selected Topic:</p>
+                                <p className="text-sm text-slate-800 font-semibold line-clamp-3">{topic}</p>
                             </div>
                          )}
-                         <button onClick={handleGenerateClick} disabled={isGenerateDisabled} className="w-full flex justify-center items-center gap-3 py-3 px-4 border border-transparent rounded-md shadow-sm text-base font-medium text-brand-blue bg-brand-gold hover:bg-yellow-300 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors">
-                            {isGeneratingPost && <div className="w-5 h-5 border-2 border-dashed rounded-full animate-spin border-brand-blue"></div>}
+                         <button onClick={handleGenerateClick} disabled={isGenerateDisabled} className="w-full flex justify-center items-center gap-3 py-3 px-4 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-corp-blue-dark hover:bg-corp-blue-dark/90 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors">
+                            {isGeneratingPost && <div className="w-5 h-5 border-2 border-dashed rounded-full animate-spin border-white"></div>}
                             <span>{isGeneratingPost ? t('contentHub.generatingPost') : t('contentHub.generateButton')}</span>
                          </button>
                      </div>
                 </div>
 
                  {/* Right side: Results */}
-                 <div className="bg-white dark:bg-brand-blue/30 p-6 sm:p-8 rounded-lg border border-slate-200 dark:border-gray-700 shadow-lg min-h-[500px] space-y-6">
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">{t('contentHub.resultsTitle')}</h2>
+                 <div className="bg-white p-6 sm:p-8 rounded-lg border border-slate-200 shadow-lg min-h-[500px] space-y-6">
+                    <h2 className="text-xl font-bold text-slate-900">{t('contentHub.resultsTitle')}</h2>
                     
                     {!generatedPost && !isGeneratingPost && (
-                        <div className="h-full flex items-center justify-center text-center text-slate-400 dark:text-gray-500">
+                        <div className="h-full flex items-center justify-center text-center text-slate-400">
                             <p>{t('contentHub.placeholder')}</p>
                         </div>
                     )}
                     
                     {(isGeneratingPost && !generatedPost) && (
-                         <div className="aspect-square bg-slate-100 dark:bg-gray-800 rounded-md flex items-center justify-center overflow-hidden border border-slate-200 dark:border-gray-700">
-                            <div className="flex flex-col items-center text-center text-slate-500 dark:text-gray-400 p-4">
-                                <div className="w-8 h-8 border-4 border-dashed rounded-full animate-spin border-brand-gold"></div>
+                         <div className="aspect-square bg-slate-100 rounded-md flex items-center justify-center overflow-hidden border border-slate-200">
+                            <div className="flex flex-col items-center text-center text-slate-500 p-4">
+                                <div className="w-8 h-8 border-4 border-dashed rounded-full animate-spin border-corp-blue-dark"></div>
                                 <span className="text-sm mt-3">Generating content...</span>
                             </div>
                         </div>
@@ -321,12 +288,12 @@ const ContentHubPage: React.FC<ContentHubPageProps> = ({
                     {generatedPost && (
                         <div className="space-y-6 animate-fade-in">
                             {/* Image Display */}
-                            <div className="aspect-square bg-slate-100 dark:bg-gray-800 rounded-md flex items-center justify-center overflow-hidden border border-slate-200 dark:border-gray-700">
+                            <div className="aspect-square bg-slate-100 rounded-md flex items-center justify-center overflow-hidden border border-slate-200">
                                 {generatedPost.imageUrl ? (
                                     <img src={generatedPost.imageUrl} alt="Generated for social media post" className="w-full h-full object-cover" />
                                 ) : (
-                                    <div className="flex flex-col items-center text-center text-slate-500 dark:text-gray-400 p-4">
-                                        <div className="w-8 h-8 border-4 border-dashed rounded-full animate-spin border-brand-gold"></div>
+                                    <div className="flex flex-col items-center text-center text-slate-500 p-4">
+                                        <div className="w-8 h-8 border-4 border-dashed rounded-full animate-spin border-corp-blue-dark"></div>
                                         <span className="text-sm mt-3">Generating image...</span>
                                     </div>
                                 )}
@@ -337,28 +304,28 @@ const ContentHubPage: React.FC<ContentHubPageProps> = ({
                                 <textarea
                                     readOnly 
                                     value={generatedPost.text || ''}
-                                    className="w-full h-40 bg-slate-100 dark:bg-gray-800 border-slate-300 dark:border-gray-600 rounded-md p-3 text-slate-800 dark:text-white text-sm resize-none"
+                                    className="w-full h-40 bg-slate-100 border-slate-300 rounded-md p-3 text-slate-800 text-sm resize-none"
                                 />
                                 <div className="flex flex-wrap gap-2">
-                                    <button onClick={() => handleCopy(generatedPost.text)} className="flex-1 px-3 py-2 bg-slate-200 dark:bg-gray-700 hover:bg-slate-300 dark:hover:bg-gray-600 text-slate-700 dark:text-white text-xs font-semibold rounded-md transition-colors">
+                                    <button onClick={() => handleCopy(generatedPost.text)} className="flex-1 px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold rounded-md transition-colors">
                                         {copySuccess ? t('contentHub.copySuccess') : t('contentHub.copyButton')}
                                     </button>
-                                    <button onClick={() => handlePublish(generatedPost.platform, generatedPost.text)} className="flex-1 px-3 py-2 bg-slate-200 dark:bg-gray-700 hover:bg-slate-300 dark:hover:bg-gray-600 text-slate-700 dark:text-white text-xs font-semibold rounded-md transition-colors">
+                                    <button onClick={() => addToast(t('contentHub.connectAccountToPublish'), 'info')} className="flex-1 px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold rounded-md transition-colors">
                                         {t('contentHub.publishToPlatformButton').replace('{platform}', generatedPost.platform)}
                                     </button>
-                                    <button onClick={handleAdaptForWebsite} disabled={isAdapting} className="flex-1 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-md transition-colors disabled:bg-slate-400">
+                                    <button onClick={handleAdaptForWebsite} disabled={isAdapting} className="flex-1 px-3 py-2 bg-corp-blue hover:bg-corp-blue-light text-white text-xs font-semibold rounded-md transition-colors disabled:bg-slate-400">
                                         {isAdapting ? t('contentHub.adaptingForWebsite') : t('contentHub.adaptForWebsiteButton')}
                                     </button>
                                 </div>
                              </div>
 
                              {/* Strategy Generator */}
-                             <div className="pt-4 border-t border-slate-200 dark:border-gray-700">
+                             <div className="pt-4 border-t border-slate-200">
                                 {!publishingStrategy ? (
                                     <button
                                         onClick={handleGetStrategy}
                                         disabled={isStrategyLoading}
-                                        className="w-full flex justify-center items-center gap-2 px-4 py-3 bg-slate-800 dark:bg-gray-700 text-white font-semibold rounded-md hover:bg-slate-900 dark:hover:bg-gray-600 transition-all shadow-sm"
+                                        className="w-full flex justify-center items-center gap-2 px-4 py-3 bg-slate-800 text-white font-semibold rounded-md hover:bg-slate-900 transition-all shadow-sm"
                                     >
                                         {isStrategyLoading ? (
                                             <><div className="w-4 h-4 border-2 border-dashed rounded-full animate-spin border-white"></div> {t('contentHub.fetchingStrategy')}</>
@@ -372,29 +339,29 @@ const ContentHubPage: React.FC<ContentHubPageProps> = ({
                                         )}
                                     </button>
                                 ) : (
-                                    <div className="bg-slate-50 dark:bg-gray-800 border border-slate-200 dark:border-gray-600 rounded-lg p-5 animate-fade-in">
-                                        <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-3 flex items-center gap-2">
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-indigo-500" viewBox="0 0 20 20" fill="currentColor">
+                                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-5 animate-fade-in">
+                                        <h3 className="text-lg font-bold text-slate-800 mb-3 flex items-center gap-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-corp-blue" viewBox="0 0 20 20" fill="currentColor">
                                                 <path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" />
                                             </svg>
                                             {t('contentHub.strategyTitle')}
                                         </h3>
                                         <div className="grid grid-cols-1 gap-4">
-                                            <div className="bg-white dark:bg-gray-900 p-3 rounded border border-slate-200 dark:border-gray-700">
-                                                <p className="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase">{t('contentHub.bestTime')}</p>
-                                                <p className="text-slate-800 dark:text-white font-medium mt-1">{publishingStrategy.bestTime}</p>
-                                                <p className="text-xs text-slate-500 dark:text-gray-400 mt-1">{publishingStrategy.reasoning}</p>
+                                            <div className="bg-white p-3 rounded border border-slate-200">
+                                                <p className="text-xs font-bold text-slate-500 uppercase">{t('contentHub.bestTime')}</p>
+                                                <p className="text-slate-800 font-medium mt-1">{publishingStrategy.bestTime}</p>
+                                                <p className="text-xs text-slate-500 mt-1">{publishingStrategy.reasoning}</p>
                                             </div>
-                                            <div className="bg-white dark:bg-gray-900 p-3 rounded border border-slate-200 dark:border-gray-700">
-                                                <p className="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase">Algorithm Tip</p>
-                                                <p className="text-slate-800 dark:text-white font-medium mt-1">{publishingStrategy.algorithmTip}</p>
+                                            <div className="bg-white p-3 rounded border border-slate-200">
+                                                <p className="text-xs font-bold text-slate-500 uppercase">Algorithm Tip</p>
+                                                <p className="text-slate-800 font-medium mt-1">{publishingStrategy.algorithmTip}</p>
                                             </div>
-                                            <div className="bg-white dark:bg-gray-900 p-3 rounded border border-slate-200 dark:border-gray-700">
-                                                <p className="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase">{t('contentHub.nextPost')}</p>
-                                                <p className="text-slate-800 dark:text-white font-medium mt-1">{publishingStrategy.nextPostIdea}</p>
+                                            <div className="bg-white p-3 rounded border border-slate-200">
+                                                <p className="text-xs font-bold text-slate-500 uppercase">{t('contentHub.nextPost')}</p>
+                                                <p className="text-slate-800 font-medium mt-1">{publishingStrategy.nextPostIdea}</p>
                                                 <button onClick={() => {
                                                     onGeneratePost(publishingStrategy.nextPostIdea, generatedPost.platform);
-                                                }} className="mt-2 text-xs text-brand-gold hover:underline font-semibold">
+                                                }} className="mt-2 text-xs text-corp-blue-dark hover:underline font-semibold">
                                                     Generate this post &rarr;
                                                 </button>
                                             </div>
@@ -404,7 +371,7 @@ const ContentHubPage: React.FC<ContentHubPageProps> = ({
                              </div>
                              
                              {/* Video Generator Section */}
-                             <div className="pt-4 border-t border-slate-200 dark:border-gray-700 space-y-4">
+                             <div className="pt-4 border-t border-slate-200 space-y-4">
                                 {!videoScript ? (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         <button 
@@ -441,7 +408,7 @@ const ContentHubPage: React.FC<ContentHubPageProps> = ({
                                         </button>
                                     </div>
                                 ) : (
-                                    <div className="bg-slate-50 dark:bg-gray-800 rounded-lg border border-slate-200 dark:border-gray-700 animate-fade-in overflow-hidden shadow-lg">
+                                    <div className="bg-slate-50 rounded-lg border border-slate-200 animate-fade-in overflow-hidden shadow-lg">
                                         <div className="bg-slate-800 text-white p-4 flex justify-between items-start">
                                             <div>
                                                 <h3 className="text-lg font-bold flex items-center gap-2">
@@ -463,27 +430,27 @@ const ContentHubPage: React.FC<ContentHubPageProps> = ({
                                         </div>
                                         
                                         <div className="p-0 overflow-x-auto">
-                                            <table className="min-w-full divide-y divide-slate-200 dark:divide-gray-700">
-                                                <thead className="bg-slate-100 dark:bg-gray-700">
+                                            <table className="min-w-full divide-y divide-slate-200">
+                                                <thead className="bg-slate-100">
                                                     <tr>
-                                                        <th scope="col" className="px-4 py-3 text-left text-xs font-bold text-slate-500 dark:text-gray-300 uppercase tracking-wider w-16">{t('contentHub.timecode')}</th>
-                                                        <th scope="col" className="px-4 py-3 text-left text-xs font-bold text-slate-500 dark:text-gray-300 uppercase tracking-wider">{t('contentHub.visual')}</th>
-                                                        <th scope="col" className="px-4 py-3 text-left text-xs font-bold text-slate-500 dark:text-gray-300 uppercase tracking-wider">{t('contentHub.voiceover')}</th>
-                                                        <th scope="col" className="px-4 py-3 text-left text-xs font-bold text-slate-500 dark:text-gray-300 uppercase tracking-wider w-24">{t('contentHub.emotion')}</th>
+                                                        <th scope="col" className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider w-16">{t('contentHub.timecode')}</th>
+                                                        <th scope="col" className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">{t('contentHub.visual')}</th>
+                                                        <th scope="col" className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">{t('contentHub.voiceover')}</th>
+                                                        <th scope="col" className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider w-24">{t('contentHub.emotion')}</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody className="bg-white dark:bg-gray-800 divide-y divide-slate-200 dark:divide-gray-700">
+                                                <tbody className="bg-white divide-y divide-slate-200">
                                                     {videoScript.scenes && videoScript.scenes.map((scene, idx) => (
-                                                        <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-gray-700">
-                                                            <td className="px-4 py-3 text-xs font-mono text-slate-500 dark:text-gray-400 align-top">
+                                                        <tr key={idx} className="hover:bg-slate-50">
+                                                            <td className="px-4 py-3 text-xs font-mono text-slate-500 align-top">
                                                                 {scene.timecode}
                                                             </td>
-                                                            <td className="px-4 py-3 text-sm text-slate-900 dark:text-gray-200 align-top">
+                                                            <td className="px-4 py-3 text-sm text-slate-900 align-top">
                                                                 {scene.visual}
                                                             </td>
-                                                            <td className="px-4 py-3 text-sm text-slate-900 dark:text-gray-200 align-top">
-                                                                <div className="font-semibold text-brand-gold">"{scene.voiceover}"</div>
-                                                                <div className="text-xs text-slate-500 dark:text-gray-400 mt-1 flex items-center gap-1">
+                                                            <td className="px-4 py-3 text-sm text-slate-900 align-top">
+                                                                <div className="font-semibold text-corp-blue-dark">"{scene.voiceover}"</div>
+                                                                <div className="text-xs text-slate-500 mt-1 flex items-center gap-1">
                                                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
                                                                         <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clipRule="evenodd" />
                                                                     </svg>
@@ -491,7 +458,7 @@ const ContentHubPage: React.FC<ContentHubPageProps> = ({
                                                                 </div>
                                                             </td>
                                                             <td className="px-4 py-3 text-sm text-slate-500 align-top">
-                                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
+                                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                                                     {scene.emotion}
                                                                 </span>
                                                             </td>
@@ -500,18 +467,18 @@ const ContentHubPage: React.FC<ContentHubPageProps> = ({
                                                 </tbody>
                                             </table>
                                         </div>
-                                        <div className="p-4 bg-slate-50 dark:bg-gray-800 border-t border-slate-200 dark:border-gray-700 space-y-2">
+                                        <div className="p-4 bg-slate-50 border-t border-slate-200 space-y-2">
                                             <div className="flex items-start gap-2">
-                                                <span className="text-xs font-bold uppercase text-slate-500 dark:text-gray-400 mt-1">Caption:</span>
-                                                <p className="text-sm text-slate-700 dark:text-gray-300">{videoScript.caption}</p>
+                                                <span className="text-xs font-bold uppercase text-slate-500 mt-1">Caption:</span>
+                                                <p className="text-sm text-slate-700">{videoScript.caption}</p>
                                             </div>
                                             <div className="flex items-start gap-2">
-                                                <span className="text-xs font-bold uppercase text-slate-500 dark:text-gray-400 mt-1">CTA:</span>
-                                                <p className="text-sm font-bold text-brand-gold">{videoScript.cta}</p>
+                                                <span className="text-xs font-bold uppercase text-slate-500 mt-1">CTA:</span>
+                                                <p className="text-sm font-bold text-corp-blue-dark">{videoScript.cta}</p>
                                             </div>
                                             <div className="mt-2 flex flex-wrap gap-2">
                                                 {videoScript.hashtags && videoScript.hashtags.map((tag, i) => (
-                                                    <span key={i} className="text-xs text-slate-500 dark:text-gray-400 bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 px-2 py-1 rounded">#{tag}</span>
+                                                    <span key={i} className="text-xs text-slate-500 bg-white border border-slate-200 px-2 py-1 rounded">#{tag}</span>
                                                 ))}
                                             </div>
                                         </div>
@@ -519,29 +486,29 @@ const ContentHubPage: React.FC<ContentHubPageProps> = ({
                                 )}
                                 
                                 {videoTools && (
-                                     <div className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-100 dark:border-indigo-800 animate-fade-in overflow-hidden shadow-sm mt-4">
+                                     <div className="bg-indigo-50 rounded-lg border border-indigo-100 animate-fade-in overflow-hidden shadow-sm mt-4">
                                         <div className="px-4 py-3 bg-indigo-600 text-white font-bold text-sm">
                                             AI Video Tools Comparison
                                         </div>
                                         <div className="overflow-x-auto">
-                                            <table className="min-w-full divide-y divide-indigo-200 dark:divide-indigo-800">
-                                                <thead className="bg-indigo-100/50 dark:bg-indigo-900/50">
+                                            <table className="min-w-full divide-y divide-indigo-200">
+                                                <thead className="bg-indigo-100/50">
                                                     <tr>
-                                                        <th className="px-4 py-2 text-left text-xs font-bold text-indigo-800 dark:text-indigo-200 uppercase">{t('contentHub.toolName')}</th>
-                                                        <th className="px-4 py-2 text-left text-xs font-bold text-indigo-800 dark:text-indigo-200 uppercase">{t('contentHub.toolCost')}</th>
-                                                        <th className="px-4 py-2 text-left text-xs font-bold text-indigo-800 dark:text-indigo-200 uppercase">{t('contentHub.toolFarsi')}</th>
-                                                        <th className="px-4 py-2 text-left text-xs font-bold text-indigo-800 dark:text-indigo-200 uppercase">{t('contentHub.toolFeatures')}</th>
-                                                        <th className="px-4 py-2 text-left text-xs font-bold text-indigo-800 dark:text-indigo-200 uppercase">{t('contentHub.toolQuality')}</th>
+                                                        <th className="px-4 py-2 text-left text-xs font-bold text-indigo-800 uppercase">{t('contentHub.toolName')}</th>
+                                                        <th className="px-4 py-2 text-left text-xs font-bold text-indigo-800 uppercase">{t('contentHub.toolCost')}</th>
+                                                        <th className="px-4 py-2 text-left text-xs font-bold text-indigo-800 uppercase">{t('contentHub.toolFarsi')}</th>
+                                                        <th className="px-4 py-2 text-left text-xs font-bold text-indigo-800 uppercase">{t('contentHub.toolFeatures')}</th>
+                                                        <th className="px-4 py-2 text-left text-xs font-bold text-indigo-800 uppercase">{t('contentHub.toolQuality')}</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody className="bg-white dark:bg-gray-900 divide-y divide-indigo-100 dark:divide-indigo-900">
+                                                <tbody className="bg-white divide-y divide-indigo-100">
                                                     {videoTools.map((tool, idx) => (
                                                         <tr key={idx}>
-                                                            <td className="px-4 py-2 text-sm font-bold text-slate-800 dark:text-white">{tool.name}</td>
-                                                            <td className="px-4 py-2 text-sm text-slate-600 dark:text-gray-300">{tool.cost}</td>
-                                                            <td className="px-4 py-2 text-sm text-slate-600 dark:text-gray-300">{tool.farsiSupport}</td>
-                                                            <td className="px-4 py-2 text-xs text-slate-500 dark:text-gray-400">{tool.features}</td>
-                                                            <td className="px-4 py-2 text-sm font-bold text-indigo-600 dark:text-indigo-400">{tool.qualityRating}</td>
+                                                            <td className="px-4 py-2 text-sm font-bold text-slate-800">{tool.name}</td>
+                                                            <td className="px-4 py-2 text-sm text-slate-600">{tool.cost}</td>
+                                                            <td className="px-4 py-2 text-sm text-slate-600">{tool.farsiSupport}</td>
+                                                            <td className="px-4 py-2 text-xs text-slate-500">{tool.features}</td>
+                                                            <td className="px-4 py-2 text-sm font-bold text-indigo-600">{tool.qualityRating}</td>
                                                         </tr>
                                                     ))}
                                                 </tbody>
@@ -554,24 +521,24 @@ const ContentHubPage: React.FC<ContentHubPageProps> = ({
                     )}
                     
                     {(isAdapting || adaptedPost) && (
-                        <div className="pt-6 border-t-2 border-dashed border-slate-200 dark:border-gray-700 space-y-4 animate-fade-in">
-                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t('contentHub.websitePreviewTitle')}</h3>
+                        <div className="pt-6 border-t-2 border-dashed border-slate-200 space-y-4 animate-fade-in">
+                            <h3 className="text-lg font-bold text-slate-900">{t('contentHub.websitePreviewTitle')}</h3>
                             {isAdapting && (
-                                <div className="bg-slate-50 dark:bg-gray-800 p-4 rounded-md border border-slate-200 dark:border-gray-700">
+                                <div className="bg-slate-50 p-4 rounded-md border border-slate-200">
                                     <div className="flex items-center justify-center py-10">
-                                        <div className="w-6 h-6 border-2 border-dashed rounded-full animate-spin border-brand-gold"></div>
-                                        <span className="ml-3 text-slate-500 dark:text-gray-400 text-sm">{t('contentHub.adaptingForWebsite')}</span>
+                                        <div className="w-6 h-6 border-2 border-dashed rounded-full animate-spin border-corp-blue-dark"></div>
+                                        <span className="ml-3 text-slate-500 text-sm">{t('contentHub.adaptingForWebsite')}</span>
                                     </div>
                                 </div>
                             )}
                             {adaptedPost && (
-                                <div className="bg-slate-50 dark:bg-gray-800 p-4 sm:p-6 rounded-lg border border-slate-200 dark:border-gray-700 space-y-4">
-                                    <h4 className="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight">{adaptedPost.title}</h4>
+                                <div className="bg-slate-50 p-4 sm:p-6 rounded-lg border border-slate-200 space-y-4">
+                                    <h4 className="text-2xl font-extrabold text-slate-800 tracking-tight">{adaptedPost.title}</h4>
                                     <div
-                                        className="prose prose-sm max-w-none text-slate-700 dark:text-gray-300 dark:prose-invert"
+                                        className="prose prose-sm max-w-none text-slate-700"
                                         dangerouslySetInnerHTML={{ __html: marked.parse(adaptedPost.content) as string }}
                                     />
-                                    <div className="pt-4 border-t border-slate-200 dark:border-gray-700">
+                                    <div className="pt-4 border-t border-slate-200">
                                         <button onClick={() => addToast(t('contentHub.publishedSuccess'), 'success')} className="w-full flex justify-center items-center gap-2 mt-2 px-3 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-md transition-colors">
                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                               <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 16.571V11.5a1 1 0 012 0v5.071a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />

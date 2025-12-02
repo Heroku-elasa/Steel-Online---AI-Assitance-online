@@ -18,7 +18,7 @@ type ViewState = 'dashboard' | 'chat' | 'finetuning' | 'resources' | 'wp_dashboa
 
 const App: React.FC = () => {
   const { t, direction } = useLanguage();
-  const [currentView, setCurrentView] = useState<ViewState>('dashboard');
+  const [currentView, setCurrentView] = useState<ViewState>('steel_online');
   const [input, setInput] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   

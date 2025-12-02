@@ -118,6 +118,11 @@ const translations: Record<Language, Record<string, string>> = {
     wp_title_placeholder: 'عنوان',
     wp_content_placeholder: 'چه چیزی در ذهن دارید؟',
     wp_save_draft: 'ذخیره پیش‌نویس',
+    wp_github_project: 'وضعیت پروژه گیت‌هاب',
+    wp_gh_branch: 'شاخه فعلی',
+    wp_gh_sync: 'وضعیت همگام‌سازی',
+    wp_gh_last_commit: 'آخرین کامیت',
+    wp_gh_view_repo: 'مشاهده مخزن',
   },
   en: {
     app_title: 'HesabrasYar',
@@ -219,6 +224,11 @@ const translations: Record<Language, Record<string, string>> = {
     wp_title_placeholder: 'Title',
     wp_content_placeholder: 'What’s on your mind?',
     wp_save_draft: 'Save Draft',
+    wp_github_project: 'GitHub Project Status',
+    wp_gh_branch: 'Current Branch',
+    wp_gh_sync: 'Sync Status',
+    wp_gh_last_commit: 'Last Commit',
+    wp_gh_view_repo: 'View Repository',
   },
   ar: {
     app_title: 'حسابرس‌یار',
@@ -283,7 +293,7 @@ const translations: Record<Language, Record<string, string>> = {
     res_def_pl: 'بيان الربح والخسارة',
     res_desc_pl: 'يظهر الأداء المالي والإيرادات والمصروفات.',
     res_def_cash: 'بيان التدفق النقدي',
-    res_desc_cash: 'تحليل السيولة وعرض التدفقات النقدية.',
+    res_desc_cash: 'تحلیل السیولة وعرض التدفقات النقدیة.',
     res_erp_title: 'تكامل ERP',
     res_erp_desc: 'أتمتة هذه التقارير عبر الاتصال بـ ShAuto ERP.',
 
@@ -319,6 +329,11 @@ const translations: Record<Language, Record<string, string>> = {
     wp_title_placeholder: 'عنوان',
     wp_content_placeholder: 'ماذا يدور في ذهنك؟',
     wp_save_draft: 'حفظ المسودة',
+    wp_github_project: 'حالة مشروع GitHub',
+    wp_gh_branch: 'الفرع الحالي',
+    wp_gh_sync: 'حالة المزامنة',
+    wp_gh_last_commit: 'آخر التزام',
+    wp_gh_view_repo: 'عرض المستودع',
   },
   sv: {
     app_title: 'HesabrasYar',
@@ -419,6 +434,11 @@ const translations: Record<Language, Record<string, string>> = {
     wp_title_placeholder: 'Rubrik',
     wp_content_placeholder: 'Vad tänker du på?',
     wp_save_draft: 'Spara utkast',
+    wp_github_project: 'GitHub Projektstatus',
+    wp_gh_branch: 'Aktuell gren',
+    wp_gh_sync: 'Synkroniseringsstatus',
+    wp_gh_last_commit: 'Senaste commit',
+    wp_gh_view_repo: 'Visa arkiv',
   },
   tr: {
     app_title: 'HesabrasYar',
@@ -519,6 +539,11 @@ const translations: Record<Language, Record<string, string>> = {
     wp_title_placeholder: 'Başlık',
     wp_content_placeholder: 'Aklınızda ne var?',
     wp_save_draft: 'Taslağı Kaydet',
+    wp_github_project: 'GitHub Proje Durumu',
+    wp_gh_branch: 'Mevcut Şube',
+    wp_gh_sync: 'Senkronizasyon Durumu',
+    wp_gh_last_commit: 'Son Taahhüt',
+    wp_gh_view_repo: 'Depoyu Görüntüle',
   },
   it: {
     app_title: 'HesabrasYar',
@@ -619,6 +644,11 @@ const translations: Record<Language, Record<string, string>> = {
     wp_title_placeholder: 'Titolo',
     wp_content_placeholder: 'Cosa ti passa per la testa?',
     wp_save_draft: 'Salva bozza',
+    wp_github_project: 'Stato Progetto GitHub',
+    wp_gh_branch: 'Ramo Corrente',
+    wp_gh_sync: 'Stato Sincronizzazione',
+    wp_gh_last_commit: 'Ultimo Commit',
+    wp_gh_view_repo: 'Vedi Repository',
   }
 };
 

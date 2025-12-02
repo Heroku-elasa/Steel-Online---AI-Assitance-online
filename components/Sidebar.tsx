@@ -77,6 +77,15 @@ const Sidebar: React.FC<Props> = ({ currentView, onViewChange, mobileMenuOpen, s
             <ul className="space-y-1">
                 <li>
                     <button 
+                      onClick={() => handleNavClick('steel_online')}
+                      className={`w-full ${isRTL ? 'text-right' : 'text-left'} px-4 py-3 rounded-xl text-sm font-medium transition-all flex items-center gap-3 ${currentView === 'steel_online' ? 'bg-[#9D003D]/20 text-[#D41F5B] border border-[#9D003D]/30' : 'text-sage-3 hover:bg-[#9D003D]/10 hover:text-red-200'}`}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                        {t('nav_steel')}
+                    </button>
+                </li>
+                <li>
+                    <button 
                       onClick={() => handleNavClick('dashboard')}
                       className={`w-full ${isRTL ? 'text-right' : 'text-left'} px-4 py-3 rounded-xl text-sm font-medium transition-all flex items-center gap-3 ${currentView === 'dashboard' ? 'bg-white/10 text-green-high border border-green-high/20' : 'text-sage-3 hover:bg-white/5 hover:text-white'}`}
                     >
@@ -119,15 +128,6 @@ const Sidebar: React.FC<Props> = ({ currentView, onViewChange, mobileMenuOpen, s
                         {/* WordPress Icon */}
                         <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.0004 0.0512695C5.40141 0.0512695 0.0512695 5.40141 0.0512695 12C0.0512695 18.5986 5.40141 23.9487 12.0004 23.9487C18.5986 23.9487 23.9487 18.5986 23.9487 12C23.9487 5.40141 18.5986 0.0512695 12.0004 0.0512695ZM10.2224 18.9959L7.30459 10.3735L5.43285 16.425C6.96929 18.4231 9.42398 19.6644 12.0004 19.6644C12.3364 19.6644 12.6669 19.6482 12.9922 19.6174L10.2224 18.9959ZM19.3496 16.5746L16.2796 7.42588H17.8967C18.1566 7.42588 18.3672 7.21526 18.3672 6.95543C18.3672 6.6956 18.1566 6.48498 17.8967 6.48498H14.1294C13.8696 6.48498 13.659 6.6956 13.659 6.95543C13.659 7.21526 13.8696 7.42588 14.1294 7.42588H15.2289L13.1557 14.3916L10.9995 7.42588H12.1643C12.4241 7.42588 12.6347 7.21526 12.6347 6.95543C12.6347 6.6956 12.4241 6.48498 12.1643 6.48498H8.53724C8.27741 6.48498 8.06679 6.6956 8.06679 6.95543C8.06679 7.21526 8.27741 7.42588 8.53724 7.42588H9.68958L6.44421 17.8465C4.30006 16.4947 2.87321 14.1037 2.87321 12C2.87321 9.43265 3.93297 7.12458 5.62939 5.51737L10.4636 18.6659L12.0004 22.1154L13.7827 17.7513L19.3496 16.5746ZM19.6957 16.0964L16.8296 6.48498C19.3039 7.49301 21.1276 9.87355 21.1276 12C21.1276 13.5186 20.6121 14.9318 19.6957 16.0964Z"/></svg>
                         {t('nav_wp')}
-                    </button>
-                </li>
-                <li>
-                    <button 
-                      onClick={() => handleNavClick('steel_online')}
-                      className={`w-full ${isRTL ? 'text-right' : 'text-left'} px-4 py-3 rounded-xl text-sm font-medium transition-all flex items-center gap-3 ${currentView === 'steel_online' ? 'bg-[#9D003D]/20 text-[#D41F5B] border border-[#9D003D]/30' : 'text-sage-3 hover:bg-[#9D003D]/10 hover:text-red-200'}`}
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
-                        {t('nav_steel')}
                     </button>
                 </li>
             </ul>

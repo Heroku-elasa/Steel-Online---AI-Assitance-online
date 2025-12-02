@@ -10,11 +10,15 @@ import {
   PROCESS_FINDINGS_DATA, AUDIT_STAGES_DATA, PLANNING_RISK_DATA, PLANNING_STATUS_DATA,
   PLANNING_RESULTS_DATA, PLANNING_OBSERVATIONS_DATA, PLANNING_BUBBLE_DATA, PLANNING_PROCESS_DATA,
   EXECUTIVE_OVERVIEW_DATA, EXECUTIVE_TARGET_DATA, EXECUTIVE_TOP_RISKS, EXECUTIVE_STATS,
-  EXECUTIVE_YEARLY_DATA
+  EXECUTIVE_YEARLY_DATA, STEEL_MARKET_PRICES
 } from '../constants';
 import { useLanguage } from '../contexts/LanguageContext';
 
-const Dashboard: React.FC = () => {
+interface DashboardProps {
+    onViewChange?: (view: any) => void;
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ onViewChange }) => {
   const { t, direction } = useLanguage();
   const [activeTab, setActiveTab] = useState<'live' | 'static' | 'planning' | 'executive'>('executive');
 
@@ -64,14 +68,14 @@ const Dashboard: React.FC = () => {
         {activeTab === 'live' && <LiveDashboard />}
         {activeTab === 'static' && <StaticDashboard />}
         {activeTab === 'planning' && <PlanningDashboard />}
-        {activeTab === 'executive' && <ExecutiveDashboard />}
+        {activeTab === 'executive' && <ExecutiveDashboard onViewChange={onViewChange} />}
       </div>
     </div>
   );
 };
 
 // --- SUB-COMPONENT: EXECUTIVE DASHBOARD (Dark Theme) ---
-const ExecutiveDashboard: React.FC = () => {
+const ExecutiveDashboard: React.FC<{onViewChange?: (view: any) => void}> = ({ onViewChange }) => {
     const { direction } = useLanguage();
     const [timeRange, setTimeRange] = useState('year'); // '6months' | 'year'
     const [chartData, setChartData] = useState(EXECUTIVE_OVERVIEW_DATA);
@@ -107,6 +111,41 @@ const ExecutiveDashboard: React.FC = () => {
                         <p className="text-gray-500 text-xs font-medium">{stat.title}</p>
                     </div>
                 ))}
+            </div>
+
+            {/* Steel Online Widget (Integrated Here) */}
+            <div className="mb-6 bg-[#1a365d] rounded-xl p-5 shadow-lg border border-blue-900 relative overflow-hidden">
+                <div className="absolute right-0 top-0 h-full w-1/4 bg-gradient-to-l from-white/5 to-transparent"></div>
+                <div className="flex flex-col md:flex-row justify-between items-center gap-6 relative z-10">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center text-2xl">🏗️</div>
+                        <div>
+                            <h3 className="text-lg font-bold text-white mb-1">وضعیت بازار و مالی (استیل آنلاین ۲۰)</h3>
+                            <div className="flex gap-4 text-xs text-blue-200">
+                                <span className="flex items-center gap-1"><div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div> چک‌های در جریان: ۴۵ میلیارد ریال</span>
+                                <span className="flex items-center gap-1"><div className="w-2 h-2 bg-yellow-400 rounded-full"></div> سررسید هفته: ۷ فقره</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* Live Prices Ticker (Mini) */}
+                    <div className="flex gap-3 overflow-x-auto pb-2 md:pb-0">
+                        {STEEL_MARKET_PRICES.map(p => (
+                            <div key={p.id} className="bg-black/20 rounded-lg px-3 py-2 min-w-[120px] text-center border border-white/10">
+                                <p className="text-[10px] text-gray-300 truncate">{p.name}</p>
+                                <p className="text-sm font-bold text-white font-mono">{p.current.toLocaleString()}</p>
+                                <p className={`text-[9px] ${p.trend === 'up' ? 'text-green-400' : 'text-red-400'}`}>{p.change}% {p.trend === 'up' ? '↑' : '↓'}</p>
+                            </div>
+                        ))}
+                    </div>
+
+                    <button 
+                        onClick={() => onViewChange && onViewChange('steel_online')}
+                        className="bg-white text-[#1a365d] px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-100 transition-colors shadow-md whitespace-nowrap"
+                    >
+                        مشاهده داشبورد کامل ←
+                    </button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">

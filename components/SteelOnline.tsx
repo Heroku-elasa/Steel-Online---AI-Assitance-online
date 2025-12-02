@@ -1,6 +1,4 @@
 
-
-
 import React, { useState, useEffect } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -41,6 +39,7 @@ const SteelOnline: React.FC = () => {
     { id: 'sp-2', price: '570909', name: 'ورق سیاه 3 فولاد مبارکه' },
   ]);
   const [liveProducts, setLiveProducts] = useState(STEEL_PRODUCTS);
+  const [marketPrices, setMarketPrices] = useState(STEEL_MARKET_PRICES);
 
   // --- Split Flap Animation Logic ---
   useEffect(() => {
@@ -65,6 +64,32 @@ const SteelOnline: React.FC = () => {
           return () => clearInterval(interval);
       }
   }, [viewMode]);
+
+  // --- Live Market AI Price Simulation ---
+  useEffect(() => {
+      if (activeTab === 'market_ai') {
+          const interval = setInterval(() => {
+              setMarketPrices(prev => prev.map(item => {
+                  const changeFactor = (Math.random() * 2 - 1); // -1 to +1
+                  const fluctuation = Math.floor(changeFactor * 150); // +/- 150 tomans
+                  const newPrice = item.current + fluctuation;
+                  const newHistory = [...item.history.slice(1), newPrice];
+                  
+                  // Calculate percentage change based on the original base (simplified for demo)
+                  const newChange = parseFloat((item.change + changeFactor * 0.1).toFixed(2));
+
+                  return {
+                      ...item,
+                      current: newPrice,
+                      change: newChange,
+                      history: newHistory,
+                      trend: changeFactor > 0 ? 'up' : 'down'
+                  };
+              }));
+          }, 2000);
+          return () => clearInterval(interval);
+      }
+  }, [activeTab]);
 
   // --- INTERNAL COMPONENTS ---
 
@@ -214,21 +239,31 @@ const SteelOnline: React.FC = () => {
 
           {/* Live Tickers */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {STEEL_MARKET_PRICES.map((item) => (
-                  <div key={item.id} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col">
+              {marketPrices.map((item) => (
+                  <div key={item.id} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col hover:shadow-md transition-shadow">
                       <div className="flex justify-between items-center mb-2">
                           <span className="font-bold text-gray-700">{item.name}</span>
-                          <span className={`text-xs px-2 py-1 rounded ${item.trend === 'up' ? 'bg-green-100 text-green-700' : item.trend === 'down' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}>
+                          <span className={`text-xs px-2 py-1 rounded font-mono ${item.trend === 'up' ? 'bg-green-100 text-green-700' : item.trend === 'down' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}>
                               {item.change > 0 ? '+' : ''}{item.change}%
                           </span>
                       </div>
-                      <div className="text-2xl font-bold text-[#1a365d] mb-2">{item.current.toLocaleString()} <span className="text-xs font-normal text-gray-400">ریال</span></div>
+                      <div className="text-2xl font-bold text-[#1a365d] mb-2 font-mono flex items-baseline gap-1">
+                          {item.current.toLocaleString()} 
+                          <span className="text-xs font-normal text-gray-400 font-sans">ریال</span>
+                      </div>
                       
                       {/* Mini Sparkline */}
-                      <div className="h-10 mt-auto">
+                      <div className="h-12 mt-auto">
                           <ResponsiveContainer width="100%" height="100%">
                               <LineChart data={item.history.map((val, idx) => ({ idx, val }))}>
-                                  <Line type="monotone" dataKey="val" stroke={item.trend === 'up' ? '#48bb78' : '#f56565'} strokeWidth={2} dot={false} />
+                                  <Line 
+                                    type="monotone" 
+                                    dataKey="val" 
+                                    stroke={item.trend === 'up' ? '#48bb78' : '#f56565'} 
+                                    strokeWidth={2} 
+                                    dot={false} 
+                                    isAnimationActive={false} // Disable animation for smoother frequent updates
+                                  />
                               </LineChart>
                           </ResponsiveContainer>
                       </div>
@@ -239,9 +274,14 @@ const SteelOnline: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Prediction Chart */}
               <div className="lg:col-span-2 bg-white p-6 rounded-xl border border-gray-200 shadow-sm h-[400px]">
-                  <h3 className="font-bold text-[#1a365d] mb-6 flex justify-between">
+                  <h3 className="font-bold text-[#1a365d] mb-6 flex justify-between items-center">
                       <span>پیش‌بینی ۷ روزه قیمت میلگرد</span>
-                      <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">Confidence: 85%</span>
+                      <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded flex items-center gap-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+                          </svg>
+                          Gemini 2.5 Confidence: 85%
+                      </span>
                   </h3>
                   <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={STEEL_AI_PREDICTION}>
@@ -256,10 +296,10 @@ const SteelOnline: React.FC = () => {
                               </linearGradient>
                           </defs>
                           <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                          <XAxis dataKey="day" tick={{fontSize: 12}} />
+                          <XAxis dataKey="day" tick={{fontSize: 12, fontFamily: 'Vazirmatn'}} />
                           <YAxis domain={['auto', 'auto']} tick={{fontSize: 12}} />
-                          <Tooltip />
-                          <Legend />
+                          <Tooltip contentStyle={{fontFamily: 'Vazirmatn', borderRadius: '8px'}} />
+                          <Legend wrapperStyle={{fontFamily: 'Vazirmatn'}} />
                           <Area type="monotone" dataKey="actual" name="قیمت واقعی" stroke="#1a365d" fillOpacity={1} fill="url(#colorActual)" strokeWidth={2} />
                           <Area type="monotone" dataKey="predicted" name="پیش‌بینی AI" stroke="#805ad5" strokeDasharray="5 5" fillOpacity={1} fill="url(#colorPred)" strokeWidth={2} />
                       </AreaChart>
@@ -268,31 +308,38 @@ const SteelOnline: React.FC = () => {
 
               {/* Sentiment Engine */}
               <div className="lg:col-span-1 bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col">
-                  <h3 className="font-bold text-[#1a365d] mb-4">موتور تحلیل احساسات بازار</h3>
+                  <h3 className="font-bold text-[#1a365d] mb-4 flex items-center gap-2">
+                      موتور تحلیل احساسات بازار
+                      <span className="bg-gray-100 text-gray-500 text-[10px] px-2 py-0.5 rounded">Real-time</span>
+                  </h3>
                   <div className="space-y-4 flex-1 overflow-y-auto">
                       {MARKET_SENTIMENT_DRIVERS.map((driver, idx) => (
-                          <div key={idx} className="border-b border-gray-50 pb-3">
+                          <div key={idx} className="border-b border-gray-50 pb-3 last:border-0">
                               <div className="flex justify-between mb-1">
                                   <span className="text-sm font-medium text-gray-700">{driver.name}</span>
-                                  <span className={`text-xs font-bold ${driver.sentiment === 'Bullish' ? 'text-green-600' : driver.sentiment === 'Bearish' ? 'text-red-600' : 'text-gray-600'}`}>
+                                  <span className={`text-xs font-bold px-2 py-0.5 rounded ${driver.sentiment === 'Bullish' ? 'bg-green-50 text-green-600' : driver.sentiment === 'Bearish' ? 'bg-red-50 text-red-600' : 'bg-gray-50 text-gray-600'}`}>
                                       {driver.sentiment}
                                   </span>
                               </div>
-                              <div className="w-full bg-gray-100 rounded-full h-1.5">
+                              <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
                                   <div 
-                                      className={`h-1.5 rounded-full ${driver.sentiment === 'Bullish' ? 'bg-green-500' : driver.sentiment === 'Bearish' ? 'bg-red-500' : 'bg-gray-400'}`}
+                                      className={`h-1.5 rounded-full transition-all duration-1000 ${driver.sentiment === 'Bullish' ? 'bg-green-500' : driver.sentiment === 'Bearish' ? 'bg-red-500' : 'bg-gray-400'}`}
                                       style={{width: `${driver.score}%`}}
                                   ></div>
                               </div>
+                              <p className="text-[10px] text-gray-400 mt-1 text-left dir-ltr">Impact: {driver.impact}</p>
                           </div>
                       ))}
                   </div>
                   
                   {/* Trade Signal */}
-                  <div className="mt-4 bg-gray-50 p-4 rounded-xl text-center">
-                      <p className="text-xs text-gray-500 mb-1">سیگنال پیشنهادی هوشمند</p>
-                      <p className="text-2xl font-bold text-green-600">خرید قوی (Strong Buy)</p>
-                      <p className="text-[10px] text-gray-400 mt-1">بر اساس واگرایی مثبت در قیمت جهانی و کف‌سازی دلار</p>
+                  <div className="mt-4 bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-xl text-center border border-green-100">
+                      <p className="text-xs text-green-700 mb-1 font-bold uppercase tracking-wider">سیگنال پیشنهادی هوشمند</p>
+                      <p className="text-2xl font-black text-green-600 tracking-tight">خرید قوی</p>
+                      <p className="text-sm font-medium text-green-700">(Strong Buy)</p>
+                      <p className="text-[10px] text-green-600/70 mt-2 border-t border-green-200/50 pt-2">
+                          بر اساس واگرایی مثبت در قیمت جهانی و کف‌سازی دلار
+                      </p>
                   </div>
               </div>
           </div>
@@ -566,7 +613,7 @@ const SteelOnline: React.FC = () => {
                                    <Cell fill="#ecc94b" />
                                    <Cell fill="#f56565" />
                                 </Pie>
-                               <Tooltip contentStyle={{borderRadius: '8px', fontFamily: 'Vazirmatn'}} />
+                                <Tooltip contentStyle={{borderRadius: '8px', fontFamily: 'Vazirmatn'}} />
                                <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{fontFamily: 'Vazirmatn', fontSize: '12px'}} />
                            </PieChart>
                        </ResponsiveContainer>
@@ -1142,7 +1189,14 @@ const SteelOnline: React.FC = () => {
                      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
                  </button>
              )}
-             <div className="w-8 h-8 bg-[#1a365d] rounded flex items-center justify-center text-white font-bold">S</div>
+             <div className="w-8 h-8 rounded flex items-center justify-center">
+                {/* Logo Image */}
+                <img 
+                  src="https://i.sstatic.net/gwuhcFtI.png" 
+                  alt="Steel Online Logo" 
+                  className="w-full h-full object-contain"
+                />
+             </div>
              <h1 className="font-bold text-lg text-[#1a365d] hidden md:block">استیل آنلاین ۲۰ <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded ml-2">سیستم مدیریت مالی</span></h1>
              <h1 className="font-bold text-lg text-[#1a365d] md:hidden">استیل آنلاین ۲۰</h1>
          </div>

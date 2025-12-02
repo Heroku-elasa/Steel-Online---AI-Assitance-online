@@ -49,10 +49,12 @@ const Sidebar: React.FC<Props> = ({ currentView, onViewChange, mobileMenuOpen, s
         <div className="p-8 border-b border-white/10 flex justify-between items-start">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              {/* Simulated Logo Icon */}
-              <div className="w-8 h-8 bg-green-high rounded flex items-center justify-center text-brand-black font-bold text-xl">
-                T
-              </div>
+              {/* Logo Image */}
+              <img 
+                src="https://i.sstatic.net/gwuhcFtI.png" 
+                alt="HesabrasYar Logo" 
+                className="w-10 h-10 object-contain"
+              />
               <h1 className="text-2xl font-bold tracking-tight text-white">{t('app_title')}</h1>
             </div>
             <p className="text-sage-3 text-xs mt-1 opacity-80">

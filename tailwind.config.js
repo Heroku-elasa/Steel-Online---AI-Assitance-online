@@ -1,4 +1,3 @@
-
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
@@ -8,34 +7,25 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Vazirmatn', 'Inter', 'sans-serif'],
+        sans: ['Vazirmatn', 'ui-sans-serif', 'system-ui'],
+        heading: ['Vazirmatn', 'ui-serif', 'Georgia'],
       },
       colors: {
-        'corp-red': {
-          dark: '#7F0031',
-          DEFAULT: '#9D003D',
-          light: '#D41F5B'
-        },
-        'corp-teal': {
-          dark: '#077E28',
-          DEFAULT: '#009787',
-          light: '#00D3BD'
-        },
-        slate: {
-          50: '#f8fafc',
-          100: '#f1f5f9',
-          200: '#e2e8f0',
-          300: '#cbd5e1',
-          400: '#94a3b8',
-          500: '#64748b',
-          600: '#475569',
-          700: '#334155',
-          800: '#1e293b',
-          900: '#0f172a',
-        },
-        'corp-blue-dark': '#9D003D', // Alias for rebranding compatibility
-        'corp-blue': '#009787', // Alias for rebranding compatibility
-        'corp-blue-light': '#00D3BD'
+        'brand-black': '#22281e',
+        'brand-green': '#034737',
+        'brand-purple': '#522148',
+        'sage-1': '#f4f7f3',
+        'sage-2': '#e9efe7',
+        'sage-3': '#d7e0d4',
+        'sage-5': '#72836d',
+        'green-high': '#a9ff9b',
+        'yellow-high': '#dcff79',
+        'blue-high': '#a0ffe5',
+        'red-high': '#ffa486',
+        'red-low': '#ffd9be',
+      },
+      boxShadow: {
+        'soft': '0 4px 20px rgba(34, 40, 30, 0.05)',
       }
     },
   },

@@ -111,7 +111,19 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-sage-1 text-brand-black font-sans h-screen overflow-hidden" dir={direction}>
+    <div 
+      className="flex min-h-screen font-sans h-screen overflow-hidden text-brand-black" 
+      dir={direction}
+      style={{
+        backgroundImage: "url('https://i.sstatic.net/f5sU7AQ6.png')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
+    >
+      {/* Background Overlay if needed for contrast */}
+      {/* <div className="absolute inset-0 bg-sage-1/90 z-0 pointer-events-none" /> */}
+
       <Sidebar 
         currentView={currentView} 
         onViewChange={setCurrentView} 
@@ -119,7 +131,7 @@ const App: React.FC = () => {
         setMobileMenuOpen={setMobileMenuOpen}
       />
 
-      <main className="flex-1 flex flex-col h-screen relative w-full">
+      <main className="flex-1 flex flex-col h-screen relative w-full z-10">
         
         {/* Mobile Header */}
         <div className="lg:hidden bg-brand-black text-white p-4 flex items-center justify-between border-b border-white/10 shrink-0 z-30">
@@ -133,7 +145,11 @@ const App: React.FC = () => {
                   </svg>
                 </button>
                 <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 bg-green-high rounded text-brand-black font-bold flex items-center justify-center text-xs">T</div>
+                    <img 
+                      src="https://i.sstatic.net/gwuhcFtI.png" 
+                      alt="Logo" 
+                      className="w-8 h-8 object-contain"
+                    />
                     <h1 className="font-bold text-white">{t('app_title')}</h1>
                 </div>
             </div>
@@ -153,7 +169,7 @@ const App: React.FC = () => {
             {/* Dashboard View */}
             {currentView === 'dashboard' && (
                 <div className="absolute inset-0 overflow-y-auto">
-                    <Dashboard />
+                    <Dashboard onViewChange={setCurrentView} />
                 </div>
             )}
 
@@ -187,7 +203,7 @@ const App: React.FC = () => {
 
             {/* Chat View */}
             {currentView === 'chat' && (
-                <div className="absolute inset-0 overflow-y-auto p-4 lg:p-10 pb-40 z-20 bg-sage-1">
+                <div className="absolute inset-0 overflow-y-auto p-4 lg:p-10 pb-40 z-20 bg-sage-1/90 backdrop-blur-sm">
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-xl font-bold">{t('nav_chat')}</h2>
                         <div className="flex items-center gap-4">

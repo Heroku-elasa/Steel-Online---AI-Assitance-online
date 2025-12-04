@@ -13,6 +13,30 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://steel-online-audit.netlify.app/chat</loc>
+    <lastmod>2025-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://steel-online-audit.netlify.app/finetuning</loc>
+    <lastmod>2025-06-01</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://steel-online-audit.netlify.app/resources</loc>
+    <lastmod>2025-06-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://steel-online-audit.netlify.app/wp_dashboard</loc>
+    <lastmod>2025-06-01</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://steel-online-audit.netlify.app/steel-online</loc>
     <lastmod>2025-06-01</lastmod>
     <changefreq>always</changefreq>

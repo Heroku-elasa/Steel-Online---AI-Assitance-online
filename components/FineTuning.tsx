@@ -36,6 +36,26 @@ const GPU_METRICS = Array.from({ length: 20 }, (_, i) => ({
     memory: 60 + Math.random() * 20
 }));
 
+const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+        return (
+            <div className="bg-white p-3 border border-gray-100 shadow-xl rounded-xl text-xs z-50">
+                <p className="font-bold text-gray-800 mb-2 border-b border-gray-100 pb-1">Epoch {label}</p>
+                {payload.map((entry: any, index: number) => (
+                    <div key={index} className="flex items-center justify-between gap-4 mb-1">
+                        <div className="flex items-center gap-2">
+                             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.stroke || entry.color }}></div>
+                             <span className="text-gray-500">{entry.name}:</span>
+                        </div>
+                        <span className="font-mono font-bold text-gray-700">{entry.value}</span>
+                    </div>
+                ))}
+            </div>
+        );
+    }
+    return null;
+};
+
 const FineTuning: React.FC = () => {
   const { t, direction } = useLanguage();
   const [activeTab, setActiveTab] = useState<'studio' | 'dashboard'>('studio');
@@ -310,7 +330,7 @@ const FineTuning: React.FC = () => {
                             <XAxis dataKey="epoch" tick={{fontSize: 12}} axisLine={false} tickLine={false} domain={[1, epochs]} type="number" />
                             <YAxis yAxisId="left" tick={{fontSize: 12}} axisLine={false} tickLine={false} domain={[0, 2]} />
                             <YAxis yAxisId="right" orientation="right" tick={{fontSize: 12}} axisLine={false} tickLine={false} domain={[0, 100]} />
-                            <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                            <Tooltip content={<CustomTooltip />} cursor={{stroke: '#cbd5e1', strokeDasharray: '3 3'}} />
                             <Line yAxisId="left" type="monotone" dataKey="loss" stroke="#dc3545" strokeWidth={2} dot={{r: 4}} name="Loss" />
                             <Line yAxisId="right" type="monotone" dataKey="accuracy" stroke="#28a745" strokeWidth={2} dot={{r: 4}} name="Accuracy %" />
                         </LineChart>

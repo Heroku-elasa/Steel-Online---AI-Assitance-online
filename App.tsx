@@ -41,6 +41,66 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Dynamic SEO: Update Title, Description, and Social Meta Tags
+  useEffect(() => {
+    let title = t('app_title');
+    let description = "سامانه جامع مدیریت مالی، حسابرسی هوشمند و فروش آنلاین آهن‌آلات. دستیار هوشمند با قابلیت تشخیص تقلب.";
+    let image = "https://placehold.co/1200x630/1a365d/ffffff?text=HesabrasYar+AI";
+
+    switch (currentView) {
+        case 'dashboard':
+            title = `${t('nav_dashboard')} | ${t('app_title')}`;
+            break;
+        case 'chat':
+            title = `${t('nav_chat')} | ${t('app_title')}`;
+            break;
+        case 'steel_online':
+            title = `استیل آنلاین ۲۰ - خرید آهن آلات و مدیریت چک | ${t('app_title')}`;
+            description = "فروش آنلاین انواع آهن آلات، میلگرد، تیرآهن و ورق. سیستم هوشمند مدیریت چک و اعتبار مشتریان.";
+            image = "https://placehold.co/1200x630/1a365d/ffffff?text=Steel+Online+20";
+            break;
+        case 'finetuning':
+            title = `${t('nav_finetuning')} | ${t('app_title')}`;
+            description = "استودیو آموزش و تنظیم دقیق مدل‌های هوش مصنوعی برای تشخیص تقلب مالی.";
+            break;
+        case 'resources':
+            title = `${t('nav_resources')} | ${t('app_title')}`;
+            break;
+        case 'wp_dashboard':
+            title = `پنل مدیریت | ${t('app_title')}`;
+            break;
+    }
+
+    // Update Title
+    document.title = title;
+    
+    // Helper to update or create meta tags
+    const updateMeta = (attributeName: string, attributeValue: string, content: string) => {
+        let element = document.querySelector(`meta[${attributeName}="${attributeValue}"]`);
+        if (!element) {
+            element = document.createElement('meta');
+            element.setAttribute(attributeName, attributeValue);
+            document.head.appendChild(element);
+        }
+        element.setAttribute('content', content);
+    };
+
+    // Update Standard Meta
+    updateMeta('name', 'description', description);
+
+    // Update Open Graph (Facebook/LinkedIn)
+    updateMeta('property', 'og:title', title);
+    updateMeta('property', 'og:description', description);
+    updateMeta('property', 'og:image', image);
+    updateMeta('property', 'og:url', window.location.href);
+
+    // Update Twitter
+    updateMeta('property', 'twitter:title', title);
+    updateMeta('property', 'twitter:description', description);
+    updateMeta('property', 'twitter:image', image);
+
+  }, [currentView, t]);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -269,7 +329,7 @@ const App: React.FC = () => {
             )}
         </div>
 
-        {/* Floating Input Area (Visible except in FineTuning/Resources/WP/Steel if desired, usually kept global) */}
+        {/* Floating Input Area */}
         {currentView !== 'finetuning' && currentView !== 'resources' && currentView !== 'wp_dashboard' && currentView !== 'steel_online' && (
             <div className="bg-white/90 backdrop-blur-md border-t border-sage-3 p-4 lg:px-12 lg:py-4 absolute bottom-0 w-full z-30 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
             <div className="max-w-4xl mx-auto flex items-end gap-3">

@@ -11,6 +11,7 @@ import {
   PLANNING_OBSERVATIONS_DATA, PLANNING_PROCESS_DATA, PLANNING_BUBBLE_DATA, STEEL_MARKET_PRICES,
   STEEL_AI_PREDICTION, MARKET_SENTIMENT_DRIVERS, STEEL_PRODUCTS
 } from '../constants';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // --- COLORS ---
 const COLORS = {
@@ -26,8 +27,9 @@ const COLORS = {
 };
 
 const SteelOnline: React.FC = () => {
+  const { t } = useLanguage();
   const [viewMode, setViewMode] = useState<'storefront' | 'dashboard'>('dashboard');
-  const [activeTab, setActiveTab] = useState<'home' | 'checks' | 'credit' | 'calendar' | 'friends' | 'reports' | 'audit' | 'market_ai'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'checks' | 'credit' | 'calendar' | 'friends' | 'reports' | 'audit' | 'market_ai' | 'google_sheet'>('home');
   const [activeSlide, setActiveSlide] = useState(0);
   const [showCheckModal, setShowCheckModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
@@ -222,6 +224,228 @@ const SteelOnline: React.FC = () => {
         </div>
     </div>
   );
+
+  // --- GOOGLE SHEETS VIEW ---
+  const GoogleSheetView = () => {
+    const [isConnected, setIsConnected] = useState(false);
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [cells, setCells] = useState<any[]>(STEEL_CHECKS_LIST.map((c, i) => ({
+        A: c.id, B: c.issuer, C: c.amount.toLocaleString(), D: c.dueDate, E: c.status, row: i + 2
+    })));
+
+    const handleConnect = () => {
+        setIsSyncing(true);
+        setTimeout(() => {
+            setIsConnected(true);
+            setIsSyncing(false);
+        }, 1500);
+    };
+
+    const handleSync = () => {
+        setIsSyncing(true);
+        setTimeout(() => {
+            setIsSyncing(false);
+            alert(t('gsheet_synced'));
+        }, 1000);
+    };
+
+    if (!isConnected) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[500px] bg-white rounded-xl shadow-lg p-8 animate-fadeIn">
+                <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-md mb-6 p-2">
+                    <svg viewBox="0 0 48 48" className="w-full h-full">
+                         <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+                         <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
+                         <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
+                         <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+                         <path fill="none" d="M0 0h48v48H0z"></path>
+                    </svg>
+                </div>
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">{t('gsheet_connect_title')}</h2>
+                <p className="text-gray-500 text-center max-w-md mb-8">
+                    {t('gsheet_connect_desc')}
+                </p>
+                <button 
+                    onClick={handleConnect}
+                    className="flex items-center gap-3 bg-white border border-gray-300 text-gray-700 font-bold py-3 px-8 rounded shadow-sm hover:bg-gray-50 hover:shadow-md transition-all"
+                >
+                     {isSyncing ? (
+                         <span className="w-5 h-5 border-2 border-gray-400 border-t-blue-500 rounded-full animate-spin"></span>
+                     ) : (
+                         <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M21.35 11.1h-9.17v2.73h6.51c-.33 3.81-3.5 5.44-6.5 5.44C8.36 19.27 5 16.25 5 12c0-4.1 3.2-7.27 7.2-7.27 3.09 0 4.9 1.97 4.9 1.97L19 4.72S16.56 2 12.1 2C6.42 2 2.03 6.8 2.03 12.5S6.42 23 12.1 23c5.83 0 8.84-4.15 8.84-10.66 0-.51-.1-1.09-.1-1.24z"/></svg>
+                     )}
+                     {t('gsheet_btn_connect')}
+                </button>
+                <div className="mt-8 flex gap-4 text-xs text-gray-400">
+                    <span className="flex items-center gap-1"><svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg> Secure SSL</span>
+                    <span>•</span>
+                    <span>Google Cloud Verified</span>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="flex flex-col h-screen max-h-[800px] bg-white rounded-xl shadow-lg overflow-hidden animate-fadeIn border border-gray-200">
+             {/* Google Sheets Header Clone */}
+             <div className="flex flex-col border-b border-gray-300">
+                 {/* Top Bar */}
+                 <div className="flex items-center px-4 py-2 gap-4">
+                     <div className="w-8 h-10 flex items-center justify-center">
+                         <svg viewBox="0 0 88 122" className="w-full h-full">
+                             <path fill="#0F9D58" d="M58,0H8.8C3.9,0,0,3.9,0,8.8v104.4C0,118.1,3.9,122,8.8,122H79.2c4.9,0,8.8-3.9,8.8-8.8V35.1L58,0z"/>
+                             <path fill="#F1F1F1" d="M58,0v35.1H88L58,0z"/>
+                             <path fill="#FFFFFF" d="M22,50.6h44v10.5H22V50.6z M22,71.7h44v10.5H22V71.7z M22,92.8h44v10.5H22V92.8z"/>
+                         </svg>
+                     </div>
+                     <div className="flex-1">
+                         <div className="flex items-center gap-2">
+                             <input type="text" className="text-lg font-normal text-gray-700 border-none outline-none focus:ring-1 focus:ring-blue-500 rounded px-1" defaultValue={t('gsheet_filename')} />
+                             <span className="text-xs text-gray-400 border border-gray-300 rounded px-1">.XLSX</span>
+                             {isSyncing ? (
+                                 <span className="text-xs text-gray-500 ml-2">{t('gsheet_syncing')}</span>
+                             ) : (
+                                 <span className="text-xs text-gray-500 ml-2 flex items-center gap-1 cursor-pointer hover:underline" onClick={handleSync}>
+                                     <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" /></svg>
+                                     Saved to Drive
+                                 </span>
+                             )}
+                         </div>
+                         <div className="flex gap-4 text-xs text-gray-600 mt-1 select-none">
+                             <span className="hover:bg-gray-100 px-1 rounded cursor-pointer">File</span>
+                             <span className="hover:bg-gray-100 px-1 rounded cursor-pointer">Edit</span>
+                             <span className="hover:bg-gray-100 px-1 rounded cursor-pointer">View</span>
+                             <span className="hover:bg-gray-100 px-1 rounded cursor-pointer">Insert</span>
+                             <span className="hover:bg-gray-100 px-1 rounded cursor-pointer">Format</span>
+                             <span className="hover:bg-gray-100 px-1 rounded cursor-pointer">Data</span>
+                             <span className="hover:bg-gray-100 px-1 rounded cursor-pointer">Tools</span>
+                             <span className="hover:bg-gray-100 px-1 rounded cursor-pointer">Extensions</span>
+                             <span className="hover:bg-gray-100 px-1 rounded cursor-pointer">Help</span>
+                         </div>
+                     </div>
+                     <div className="flex gap-4 items-center">
+                         <button className="bg-[#c2e7ff] text-[#001d35] hover:bg-[#b3d7ef] px-6 py-2 rounded-full text-sm font-bold flex items-center gap-2 transition-colors">
+                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                             Share
+                         </button>
+                         <div className="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center text-sm">M</div>
+                     </div>
+                 </div>
+
+                 {/* Toolbar */}
+                 <div className="bg-[#edf2fa] px-4 py-1 flex items-center gap-4 border-t border-gray-300 overflow-x-auto">
+                     <div className="flex gap-1 text-gray-600">
+                         <button className="p-1 hover:bg-gray-200 rounded"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg></button>
+                         <button className="p-1 hover:bg-gray-200 rounded"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6" /></svg></button>
+                         <button className="p-1 hover:bg-gray-200 rounded"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg></button>
+                     </div>
+                     <div className="w-[1px] h-4 bg-gray-300"></div>
+                     <select className="bg-transparent text-xs outline-none w-20"><option>100%</option></select>
+                     <div className="w-[1px] h-4 bg-gray-300"></div>
+                     <div className="flex gap-1 text-gray-700">
+                         <button className="p-1 hover:bg-gray-200 rounded font-bold">B</button>
+                         <button className="p-1 hover:bg-gray-200 rounded italic">I</button>
+                         <button className="p-1 hover:bg-gray-200 rounded line-through">S</button>
+                         <button className="p-1 hover:bg-gray-200 rounded text-[#1a73e8]">A</button>
+                     </div>
+                     <div className="w-[1px] h-4 bg-gray-300"></div>
+                     <div className="flex gap-1 text-gray-600">
+                         <button className="p-1 hover:bg-gray-200 rounded"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" /></svg></button>
+                         <button className="p-1 hover:bg-gray-200 rounded"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg></button>
+                         <button className="p-1 hover:bg-gray-200 rounded"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" /></svg></button>
+                     </div>
+                     <div className="w-[1px] h-4 bg-gray-300"></div>
+                     <button onClick={handleSync} className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded border border-green-200 hover:bg-green-200 transition-colors ml-auto flex items-center gap-1">
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                        Sync
+                     </button>
+                 </div>
+
+                 {/* Formula Bar */}
+                 <div className="bg-white px-2 py-1 flex items-center gap-2 border-t border-gray-300">
+                     <span className="text-gray-400 font-bold text-xs italic px-2">fx</span>
+                     <div className="w-[1px] h-5 bg-gray-300"></div>
+                     <input type="text" className="w-full text-sm outline-none px-2 py-0.5" placeholder="" />
+                 </div>
+             </div>
+
+             {/* The Grid */}
+             <div className="flex-1 overflow-auto relative bg-white" dir="ltr">
+                 <table className="border-collapse w-full">
+                     <thead>
+                         <tr>
+                             <th className="w-10 bg-[#f8f9fa] border border-[#c0c0c0] sticky top-0 left-0 z-20"></th>
+                             {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].map(col => (
+                                 <th key={col} className="bg-[#f8f9fa] border border-[#c0c0c0] min-w-[100px] text-xs font-normal text-gray-600 py-1 sticky top-0 z-10">{col}</th>
+                             ))}
+                         </tr>
+                     </thead>
+                     <tbody>
+                         {/* Header Row Data */}
+                         <tr>
+                             <td className="bg-[#f8f9fa] border border-[#c0c0c0] text-center text-xs text-gray-500 font-bold sticky left-0">1</td>
+                             <td className="border border-[#e2e3e3] p-1 text-sm font-bold bg-green-50 text-right">Check ID</td>
+                             <td className="border border-[#e2e3e3] p-1 text-sm font-bold bg-green-50 text-right">Issuer</td>
+                             <td className="border border-[#e2e3e3] p-1 text-sm font-bold bg-green-50 text-right">Amount (IRR)</td>
+                             <td className="border border-[#e2e3e3] p-1 text-sm font-bold bg-green-50 text-right">Due Date</td>
+                             <td className="border border-[#e2e3e3] p-1 text-sm font-bold bg-green-50 text-right">Status</td>
+                             <td className="border border-[#e2e3e3] p-1 text-sm"></td>
+                             <td className="border border-[#e2e3e3] p-1 text-sm"></td>
+                             <td className="border border-[#e2e3e3] p-1 text-sm"></td>
+                         </tr>
+                         
+                         {/* Data Rows */}
+                         {cells.map((row) => (
+                             <tr key={row.row}>
+                                 <td className="bg-[#f8f9fa] border border-[#c0c0c0] text-center text-xs text-gray-500 sticky left-0">{row.row}</td>
+                                 <td className="border border-[#e2e3e3] p-0">
+                                     <input type="text" className="w-full h-full p-1 outline-none focus:ring-2 ring-blue-500 text-right" defaultValue={row.A} />
+                                 </td>
+                                 <td className="border border-[#e2e3e3] p-0">
+                                     <input type="text" className="w-full h-full p-1 outline-none focus:ring-2 ring-blue-500 text-right" defaultValue={row.B} />
+                                 </td>
+                                 <td className="border border-[#e2e3e3] p-0">
+                                     <input type="text" className="w-full h-full p-1 outline-none focus:ring-2 ring-blue-500 text-right" defaultValue={row.C} />
+                                 </td>
+                                 <td className="border border-[#e2e3e3] p-0">
+                                     <input type="text" className="w-full h-full p-1 outline-none focus:ring-2 ring-blue-500 text-right" defaultValue={row.D} />
+                                 </td>
+                                 <td className="border border-[#e2e3e3] p-0">
+                                     <input 
+                                        type="text" 
+                                        className={`w-full h-full p-1 outline-none focus:ring-2 ring-blue-500 text-right ${row.E === 'bounced' ? 'text-red-600 bg-red-50' : row.E === 'cleared' ? 'text-green-600 bg-green-50' : ''}`} 
+                                        defaultValue={row.E} 
+                                     />
+                                 </td>
+                                 <td className="border border-[#e2e3e3] p-1 text-sm"></td>
+                                 <td className="border border-[#e2e3e3] p-1 text-sm"></td>
+                                 <td className="border border-[#e2e3e3] p-1 text-sm"></td>
+                             </tr>
+                         ))}
+
+                         {/* Empty Rows */}
+                         {Array.from({length: 10}).map((_, i) => (
+                              <tr key={`empty-${i}`}>
+                                 <td className="bg-[#f8f9fa] border border-[#c0c0c0] text-center text-xs text-gray-500 sticky left-0">{i + cells.length + 2}</td>
+                                 {Array.from({length: 8}).map((_, j) => (
+                                     <td key={j} className="border border-[#e2e3e3] p-1 text-sm min-h-[24px]"></td>
+                                 ))}
+                              </tr>
+                         ))}
+                     </tbody>
+                 </table>
+             </div>
+             
+             {/* Sheets Footer */}
+             <div className="bg-[#f8f9fa] border-t border-gray-300 px-2 py-1 flex items-center gap-1 overflow-x-auto">
+                 <button className="p-1 hover:bg-gray-200 rounded"><svg className="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg></button>
+                 <button className="p-1 hover:bg-gray-200 rounded"><svg className="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg></button>
+                 <div className="bg-white border border-gray-300 border-b-white rounded-t px-4 py-1 text-sm font-bold text-green-700 shadow-sm relative -mb-2 z-10">Checks_1404</div>
+                 <div className="hover:bg-gray-200 border-b border-transparent rounded-t px-4 py-1 text-sm text-gray-600 cursor-pointer">Transactions_Log</div>
+             </div>
+        </div>
+    );
+  };
 
   const MarketAIView = () => (
       <div className="space-y-6 animate-fadeIn">
@@ -748,6 +972,7 @@ const SteelOnline: React.FC = () => {
                               <th className="px-6 py-4">بانک / شعبه</th>
                               <th className="px-6 py-4">مبلغ (ریال)</th>
                               <th className="px-6 py-4">تاریخ سررسید</th>
+                              <th className="px-6 py-4">زمان باقی‌مانده</th>
                               <th className="px-6 py-4">وضعیت</th>
                               <th className="px-6 py-4">عملیات</th>
                           </tr>
@@ -762,20 +987,38 @@ const SteelOnline: React.FC = () => {
                                   <td className="px-6 py-4 font-bold text-gray-800">{check.amount.toLocaleString()}</td>
                                   <td className="px-6 py-4 font-mono text-gray-600">{check.dueDate}</td>
                                   <td className="px-6 py-4">
+                                      <span className={`px-2 py-1 rounded-md text-xs font-bold ${
+                                        check.daysLeft < 0 ? 'bg-red-100 text-red-700' : 
+                                        check.daysLeft === 0 ? 'bg-yellow-100 text-yellow-700' :
+                                        check.daysLeft <= 3 ? 'bg-orange-100 text-orange-700' :
+                                        'bg-gray-100 text-gray-600'
+                                      }`}>
+                                        {check.daysLeft < 0 ? `${Math.abs(check.daysLeft)} روز گذشته` :
+                                         check.daysLeft === 0 ? 'امروز' :
+                                         `${check.daysLeft} روز`}
+                                      </span>
+                                  </td>
+                                  <td className="px-6 py-4">
                                       <CheckStatusBadge status={check.status} days={check.daysLeft} />
                                   </td>
                                   <td className="px-6 py-4">
                                       <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                          <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded" title="مشاهده"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg></button>
+                                          <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors" title="مشاهده">
+                                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                          </button>
                                           <button 
                                               onClick={() => {setSelectedCheckForTransfer(check); setShowTransferModal(true);}} 
-                                              className="p-1.5 text-orange-500 hover:bg-orange-50 rounded" 
+                                              className="p-1.5 text-orange-500 hover:bg-orange-50 rounded transition-colors" 
                                               title="واگذاری"
                                           >
-                                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+                                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
                                           </button>
-                                          <button className="p-1.5 text-gray-600 hover:bg-gray-100 rounded" title="ویرایش"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
-                                          <button className="p-1.5 text-red-600 hover:bg-red-50 rounded" title="حذف"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                                          <button className="p-1.5 text-gray-600 hover:bg-gray-100 rounded transition-colors" title="ویرایش">
+                                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                          </button>
+                                          <button className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors" title="حذف">
+                                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                          </button>
                                       </div>
                                   </td>
                               </tr>
@@ -1092,6 +1335,13 @@ const SteelOnline: React.FC = () => {
              هوش بازار (Live AI)
          </button>
          <button 
+             onClick={() => { setActiveTab('google_sheet'); setMobileMenuOpen(false); }}
+             className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-bold rounded-xl transition-colors ${activeTab === 'google_sheet' ? 'bg-[#f1f3f4] text-[#1f1f1f]' : 'text-gray-600 hover:bg-gray-50'}`}
+         >
+             <svg className="w-5 h-5" viewBox="0 0 88 122"><path fill="#0F9D58" d="M58,0H8.8C3.9,0,0,3.9,0,8.8v104.4C0,118.1,3.9,122,8.8,122H79.2c4.9,0,8.8-3.9,8.8-8.8V35.1L58,0z"/><path fill="#F1F1F1" d="M58,0v35.1H88L58,0z"/><path fill="#FFFFFF" d="M22,50.6h44v10.5H22V50.6z M22,71.7h44v10.5H22V71.7z M22,92.8h44v10.5H22V92.8z"/></svg>
+             {t('nav_gsheet')}
+         </button>
+         <button 
              onClick={() => { setActiveTab('checks'); setMobileMenuOpen(false); }}
              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-bold rounded-xl transition-colors ${activeTab === 'checks' ? 'bg-[#fffaf0] text-[#c05621]' : 'text-gray-600 hover:bg-gray-50'}`}
          >
@@ -1298,6 +1548,7 @@ const SteelOnline: React.FC = () => {
                             {activeTab === 'reports' && 'گزارشات مالی'}
                             {activeTab === 'audit' && 'برنامه‌ریزی حسابرسی'}
                             {activeTab === 'market_ai' && 'هوش بازار'}
+                            {activeTab === 'google_sheet' && 'مدیریت چک (Google Sheets)'}
                         </span>
                     </div>
 
@@ -1310,6 +1561,7 @@ const SteelOnline: React.FC = () => {
                     {activeTab === 'audit' && <AuditPlanningView />}
                     {activeTab === 'reports' && <ReportsView />}
                     {activeTab === 'market_ai' && <MarketAIView />}
+                    {activeTab === 'google_sheet' && <GoogleSheetView />}
                  </>
              ) : (
                  // --- STOREFRONT VIEW (Live Shopping) ---
